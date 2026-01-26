@@ -12,7 +12,7 @@
         rel="stylesheet">
 
     <script src="https://unpkg.com/lucide@latest"></script>
-    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="/css/main.css">
 </head>
 
 <body>
@@ -37,8 +37,8 @@
 
     <!-- Scripts -->
     <script src="/config.js"></script>
-    <script src="js/api.js"></script>
-    <script src="js/components.js"></script>
+    <script src="/js/api.js"></script>
+    <script src="/js/components.js"></script>
     <script>
         async function cargar() {
             const lista = document.getElementById("lista");
@@ -94,7 +94,12 @@
                             
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem; pt: 0.5rem; border-top: 1px solid var(--glass-border);">
                                 <span style="font-size: 0.875rem; color: var(--text-muted);">Total pagado:</span>
-                                <span style="font-weight: 700;">${p.precio_total.toFixed(2)}€</span>
+                                <div style="display: flex; align-items: center; gap: 1rem;">
+                                    <span style="font-weight: 700;">${p.precio_total.toFixed(2)}€</span>
+                                    <button class="btn-small" onclick="deletePrecio(${p.id})" style="background: transparent; border: none; color: #ef4444; padding: 0; width: auto; cursor: pointer;">
+                                        <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
+                                    </button>
+                                </div>
                             </div>
                             
                             ${p.tipo_oferta ? `
@@ -110,6 +115,12 @@
             } catch (error) {
                 lista.innerHTML = `<div class="empty-state" style="color: #ef4444;">Error al conectar con la API</div>`;
             }
+        }
+
+        async function deletePrecio(id) {
+            if (!confirm("¿Borrar este registro?")) return;
+            await ApiService.deletePrecio(id);
+            cargar();
         }
 
         document.addEventListener("DOMContentLoaded", cargar);

@@ -1,28 +1,53 @@
 from pydantic import BaseModel
 from typing import List, Optional
 
-class Categoria(BaseModel):
-    id: int
+# --- Categoria ---
+class CategoriaBase(BaseModel):
     nombre: str
+
+class CategoriaCreate(CategoriaBase):
+    pass
+
+class Categoria(CategoriaBase):
+    id: int
     class Config: from_attributes = True
 
-class Marca(BaseModel):
-    id: int
+# --- Marca ---
+class MarcaBase(BaseModel):
     nombre: str
+
+class MarcaCreate(MarcaBase):
+    pass
+
+class Marca(MarcaBase):
+    id: int
     class Config: from_attributes = True
 
-class Supermercado(BaseModel):
-    id: int
+# --- Supermercado ---
+class SupermercadoBase(BaseModel):
     nombre: str
+
+class SupermercadoCreate(SupermercadoBase):
+    pass
+
+class Supermercado(SupermercadoBase):
+    id: int
     class Config: from_attributes = True
 
-class Producto(BaseModel):
-    id: int
+# --- Producto ---
+class ProductoBase(BaseModel):
     nombre: str
     categoria_id: int
+
+class ProductoCreate(ProductoBase):
+    pass
+
+class Producto(ProductoBase):
+    id: int
     categoria: Optional[Categoria] = None
     class Config: from_attributes = True
 
+# --- Precio ---
 class PrecioCreate(BaseModel):
     producto_id: int
     marca_id: int

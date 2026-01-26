@@ -2,14 +2,18 @@ services:
   - type: web
     name: pricetracker-pro
     env: python
-    # Instalamos dependencias del backend
     buildCommand: pip install -r backend/requirements.txt
-    # Arrancamos con uvicorn (el frontend se sirve desde FastAPI)
     startCommand: bash start.sh
     envVars:
-      - key: DATABASE_URL
-        fromDatabase:
-          name: precios-db # Esto asume que crearás una DB en Render llamada precios-db
-          property: connectionString
+      - key: DB_HOST
+        value: "" # Configura esto en el panel de Render
+      - key: DB_NAME
+        value: "" # Configura esto en el panel de Render
+      - key: DB_USER
+        value: "" # Configura esto en el panel de Render
+      - key: DB_PASSWORD
+        value: "" # Configura esto en el panel de Render
+      - key: BACKEND_URL
+        value: "" # Configura esto con tu URL de Render (https://...)
       - key: PYTHON_VERSION
         value: 3.11.0

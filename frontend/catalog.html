@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestión de Catálogo — PriceTracker Pro</title>
+    <title>Gestión del Sistema — PriceTracker Pro</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -12,65 +12,222 @@
         rel="stylesheet">
 
     <script src="https://unpkg.com/lucide@latest"></script>
-    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="/css/main.css">
+    <style>
+        .admin-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 2rem;
+        }
+
+        .admin-section {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .item-list {
+            max-height: 300px;
+            overflow-y: auto;
+            border-top: 1px solid var(--glass-border);
+            padding-top: 1rem;
+        }
+
+        .list-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .btn-small {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+            width: auto;
+            background: #ef4444;
+        }
+
+        .btn-small:hover {
+            background: #dc2626;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .tab-btn {
+            padding: 0.5rem 1rem;
+            background: transparent;
+            color: var(--text-muted);
+            width: auto;
+            border-radius: 0;
+            border-bottom: 2px solid transparent;
+        }
+
+        .tab-btn.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+    </style>
 </head>
 
 <body>
     <div class="container">
         <header>
-            <h1 class="page-title">Configuración de Parámetros</h1>
-            <p style="color: var(--text-muted); margin-bottom: 2rem;">Estandariza tus productos para evitar
-                comparaciones erróneas y detectar ofertas engañosas.</p>
+            <h1 class="page-title">Panel de Administración</h1>
+            <p style="color: var(--text-muted); margin-bottom: 2rem;">Gestiona los pilares de tu base de datos para
+                mantener el sistema sólido.</p>
         </header>
 
-        <main style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
-            <!-- Sección de Marcas/Categorías Simplificada -->
-            <section class="card">
-                <h2 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 1rem;">Catálogo Actual</h2>
-                <div id="catalog-summary" style="display: flex; flex-direction: column; gap: 1rem;">
-                    <div class="card" style="margin-bottom: 0; padding: 1rem; background: rgba(99, 102, 241, 0.05);">
-                        <div style="font-weight: 700; color: var(--primary);">Productos Disponibles</div>
-                        <div id="count-prod" style="font-size: 2rem; font-weight: 800;">...</div>
-                    </div>
+        <main class="admin-grid">
+            <!-- Gestión de Categorías -->
+            <section class="admin-section">
+                <div style="display: flex; align-items: center; gap: 0.5rem; color: var(--primary);">
+                    <i data-lucide="tag"></i>
+                    <h2 style="font-size: 1.25rem; font-weight: 700;">Categorías</h2>
                 </div>
-
-                <div style="margin-top: 2rem;">
-                    <h3 style="font-size: 1rem; font-weight: 700; margin-bottom: 0.5rem;">Próximamente...</h3>
-                    <p style="font-size: 0.875rem; color: var(--text-muted);">Habilitaremos formularios para que añadas
-                        tus propias categorías y marcas personalizadas.</p>
+                <div class="input-group">
+                    <input id="new-cat" type="text" placeholder="Nueva categoría...">
+                    <button onclick="addCategoria()" style="width: auto; padding: 0.75rem 1rem;">Añadir</button>
                 </div>
+                <div id="list-categorias" class="item-list"></div>
             </section>
 
-            <section class="card">
-                <h2 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 1rem;">¿Por qué estandarizar?</h2>
-                <ul style="color: var(--text-muted); padding-left: 1.25rem; line-height: 1.8;">
-                    <li><strong>Comparación Real:</strong> Un 3x2 en botes de 50g puede ser más caro que un pack ahorro
-                        de 250g.</li>
-                    <li><strong>Detección de "Shrinkflation":</strong> Si el formato cambia de 500g a 450g pero el
-                        precio se mantiene, lo verás inmediatamente en el "Precio x Unidad".</li>
-                    <li><strong>Marcas Blancas:</strong> Compara la calidad/precio entre marcas líderes y blancas de
-                        forma científica.</li>
-                </ul>
-                <div style="margin-top: 2rem; text-align: center;">
-                    <i data-lucide="shield-check"
-                        style="width: 64px; height: 64px; color: var(--primary); opacity: 0.8;"></i>
+            <!-- Gestión de Marcas -->
+            <section class="admin-section">
+                <div style="display: flex; align-items: center; gap: 0.5rem; color: var(--primary);">
+                    <i data-lucide="award"></i>
+                    <h2 style="font-size: 1.25rem; font-weight: 700;">Marcas</h2>
                 </div>
+                <div class="input-group">
+                    <input id="new-marca" type="text" placeholder="Nueva marca...">
+                    <button onclick="addMarca()" style="width: auto; padding: 0.75rem 1rem;">Añadir</button>
+                </div>
+                <div id="list-marcas" class="item-list"></div>
+            </section>
+
+            <!-- Gestión de Supermercados -->
+            <section class="admin-section">
+                <div style="display: flex; align-items: center; gap: 0.5rem; color: var(--primary);">
+                    <i data-lucide="store"></i>
+                    <h2 style="font-size: 1.25rem; font-weight: 700;">Supermercados</h2>
+                </div>
+                <div class="input-group">
+                    <input id="new-super" type="text" placeholder="Nuevo súper...">
+                    <button onclick="addSuper()" style="width: auto; padding: 0.75rem 1rem;">Añadir</button>
+                </div>
+                <div id="list-super" class="item-list"></div>
+            </section>
+
+            <!-- Gestión de Productos -->
+            <section class="admin-section">
+                <div style="display: flex; align-items: center; gap: 0.5rem; color: var(--primary);">
+                    <i data-lucide="package"></i>
+                    <h2 style="font-size: 1.25rem; font-weight: 700;">Productos</h2>
+                </div>
+                <div class="input-group" style="flex-direction: column;">
+                    <input id="new-prod-name" type="text" placeholder="Nombre completo del producto...">
+                    <div style="display: flex; gap: 0.5rem;">
+                        <select id="new-prod-cat" class="custom-select" style="margin-bottom: 0;"></select>
+                        <button onclick="addProducto()" style="width: auto; padding: 0.75rem 1rem;">Añadir</button>
+                    </div>
+                </div>
+                <div id="list-productos" class="item-list"></div>
             </section>
         </main>
     </div>
 
     <script src="/config.js"></script>
-    <script src="js/api.js"></script>
-    <script src="js/components.js"></script>
+    <script src="/js/api.js"></script>
+    <script src="/js/components.js"></script>
     <script>
-        async function loadStats() {
+        async function loadAll() {
             try {
-                const prods = await ApiService.getCatalogProductos();
-                document.getElementById("count-prod").textContent = prods.length;
+                const [cats, marcas, supers, prods] = await Promise.all([
+                    ApiService.getCatalogCategorias(),
+                    ApiService.getCatalogMarcas(),
+                    ApiService.getCatalogSupermercados(),
+                    ApiService.getCatalogProductos()
+                ]);
+
+                renderList("list-categorias", cats, 'deleteCategoria');
+                renderList("list-marcas", marcas, 'deleteMarca');
+                renderList("list-super", supers, 'deleteSupermercado');
+                renderList("list-productos", prods, 'deleteProducto');
+
+                // Llenar select de categorías para nuevos productos
+                const catSelect = document.getElementById("new-prod-cat");
+                catSelect.innerHTML = cats.map(c => `<option value="${c.id}">${c.nombre}</option>`).join('');
+
             } catch (e) { console.error(e); }
         }
-        document.addEventListener("DOMContentLoaded", loadStats);
+
+        function renderList(containerId, items, apiMethodName) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = items.map(item => `
+                <div class="list-row">
+                    <span>${item.nombre}</span>
+                    <button class="btn-small" onclick="handleDelete(${item.id}, '${apiMethodName}')">
+                        <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+                    </button>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        async function handleDelete(id, apiMethodName) {
+            if (!confirm("¿Seguro que quieres eliminar este elemento? Podría afectar a registros existentes.")) return;
+            try {
+                await ApiService[apiMethodName](id);
+                loadAll();
+            } catch (e) {
+                alert("Error al eliminar: " + e.message);
+            }
+        }
+
+        async function addCategoria() {
+            const name = document.getElementById("new-cat").value;
+            if (!name) return;
+            await ApiService.createCategoria(name);
+            document.getElementById("new-cat").value = "";
+            loadAll();
+        }
+
+        async function addMarca() {
+            const name = document.getElementById("new-marca").value;
+            if (!name) return;
+            await ApiService.createMarca(name);
+            document.getElementById("new-marca").value = "";
+            loadAll();
+        }
+
+        async function addSuper() {
+            const name = document.getElementById("new-super").value;
+            if (!name) return;
+            await ApiService.createSupermercado(name);
+            document.getElementById("new-super").value = "";
+            loadAll();
+        }
+
+        async function addProducto() {
+            const name = document.getElementById("new-prod-name").value;
+            const catId = document.getElementById("new-prod-cat").value;
+            if (!name || !catId) return;
+            await ApiService.createProducto(name, catId);
+            document.getElementById("new-prod-name").value = "";
+            loadAll();
+        }
+
+        document.addEventListener("DOMContentLoaded", loadAll);
     </script>
 </body>
 
 </html>
+```
