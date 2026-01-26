@@ -4,7 +4,16 @@ const API_URL = window.BACKEND_URL || (window.location.port === "5500" ? "http:/
 const ApiService = {
     async getPrecios() {
         const res = await fetch(`${API_URL}/precios`);
-        if (!res.ok) throw new Error("Error al obtener precios");
+        return await res.json();
+    },
+
+    async getPrecio(id) {
+        const res = await fetch(`${API_URL}/precios/${id}`);
+        return await res.json();
+    },
+
+    async getPrecioHistorial(prodId) {
+        const res = await fetch(`${API_URL}/precios/producto/${prodId}`);
         return await res.json();
     },
 
@@ -14,10 +23,23 @@ const ApiService = {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(datos)
         });
-        if (!res.ok) throw new Error("Error al crear precio");
         return await res.json();
     },
 
+    async updatePrecio(id, datos) {
+        const res = await fetch(`${API_URL}/precios/${id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(datos)
+        });
+        return await res.json();
+    },
+
+    async deletePrecio(id) {
+        return fetch(`${API_URL}/precios/${id}`, { method: "DELETE" });
+    },
+
+    // Catálogo
     async getCatalogProductos() {
         const res = await fetch(`${API_URL}/catalog/productos`);
         return await res.json();
@@ -38,7 +60,7 @@ const ApiService = {
         return await res.json();
     },
 
-    // Create Methods
+    // Create & Delete Helpers
     async createCategoria(nombre) {
         return fetch(`${API_URL}/catalog/categorias`, {
             method: "POST",
@@ -63,34 +85,38 @@ const ApiService = {
         }).then(res => res.json());
     },
 
-    async createProducto(nombre, categoria_id) {
+    async createProducto(nombre, categoria_id, unidades_permitidas) {
         return fetch(`${API_URL}/catalog/productos`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ nombre, categoria_id: parseInt(categoria_id) })
+            body: JSON.stringify({
+                nombre,
+                categoria_id: parseInt(categoria_id),
+                unidades_permitidas
+            })
         }).then(res => res.json());
     },
 
-    // Delete Methods
-    async deleteCategoria(id) {
-        return fetch(`${API_URL}/catalog/categorias/${id}`, { method: "DELETE" });
+    async deleteCategoria(id) { return fetch(`${API_URL}/catalog/categorias/${id}`, { method: "DELETE" }); },
+    async deleteMarca(id) { return fetch(`${API_URL}/catalog/marcas/${id}`, { method: "DELETE" }); },
+    async deleteSupermercado(id) { return fetch(`${API_URL}/catalog/supermercados/${id}`, { method: "DELETE" }); },
+    async deleteProducto(id) { return fetch(`${API_URL}/catalog/productos/${id}`, { method: "DELETE" }); },
+
+    // Relaciones
+    async linkProductoMarca(producto_id, marca_id) {
+        return fetch(`${API_URL}/catalog/relacionar-producto-marca`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ producto_id: parseInt(producto_id), marca_id: parseInt(marca_id) })
+        }).then(res => res.json());
     },
 
-    async deleteMarca(id) {
-        return fetch(`${API_URL}/catalog/marcas/${id}`, { method: "DELETE" });
-    },
-
-    async deleteSupermercado(id) {
-        return fetch(`${API_URL}/catalog/supermercados/${id}`, { method: "DELETE" });
-    },
-
-    async deleteProducto(id) {
-        return fetch(`${API_URL}/catalog/productos/${id}`, { method: "DELETE" });
-    },
-
-    async deletePrecio(id) {
-        return fetch(`${API_URL}/precios/${id}`, { method: "DELETE" });
+    async unlinkProductoMarca(producto_id, marca_id) {
+        return fetch(`${API_URL}/catalog/desvincular-producto-marca?producto_id=${producto_id}&marca_id=${marca_id}`, {
+            method: "DELETE"
+        }).then(res => res.json());
     }
 };
 
+window.API_URL = API_URL;
 window.ApiService = ApiService;

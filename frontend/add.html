@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Añadir Precio — PriceTracker Pro</title>
+    <title>Registro — PriceTracker Pro</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,42 +18,37 @@
 <body>
     <div class="container" style="max-width: 600px;">
         <header>
-            <h1 class="page-title">Nuevo Registro</h1>
-            <p style="color: var(--text-muted); margin-bottom: 2rem;">Introduce los detalles del producto para mantener
-                tu historial actualizado.</p>
+            <h1 id="form-title" class="page-title">Nuevo Registro</h1>
+            <p id="form-desc" style="color: var(--text-muted); margin-bottom: 2rem;">Los datos se auto-filtrarán según
+                el producto seleccionado.</p>
         </header>
 
         <main>
             <section class="card">
                 <form id="price-form">
-                    <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                        <div>
-                            <label for="producto_id">Producto</label>
-                            <select id="producto_id" class="custom-select" required>
-                                <option value="">Cargando catálogo...</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label for="marca_id">Marca</label>
-                            <select id="marca_id" class="custom-select" required>
-                                <option value="">Cargando marcas...</option>
-                            </select>
-                        </div>
+                    <div class="form-group">
+                        <label for="producto_id">Producto</label>
+                        <select id="producto_id" class="custom-select" required>
+                            <option value="">Selecciona producto...</option>
+                        </select>
                     </div>
 
-                    <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label for="marca_id">Marca</label>
+                        <select id="marca_id" class="custom-select" required>
+                            <option value="">Elige producto primero...</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group grid-2">
                         <div>
                             <label for="cantidad">Cantidad / Peso</label>
-                            <input id="cantidad" type="number" step="0.001" placeholder="Ej: 1.5 o 500" required>
+                            <input id="cantidad" type="number" step="0.001" placeholder="Ej: 1.5" required>
                         </div>
                         <div>
                             <label for="unidad">Unidad</label>
                             <select id="unidad" class="custom-select" required>
-                                <option value="kg">kg</option>
-                                <option value="g">gramos (g)</option>
-                                <option value="L">Litros (L)</option>
-                                <option value="ml">mililitros (ml)</option>
-                                <option value="ud">unidades (ud)</option>
+                                <option value="">Selecciona...</option>
                             </select>
                         </div>
                     </div>
@@ -61,7 +56,7 @@
                     <div class="form-group">
                         <label for="supermercado_id">Establecimiento</label>
                         <select id="supermercado_id" class="custom-select" required>
-                            <option value="">Cargando supermercados...</option>
+                            <option value="">Selecciona súper...</option>
                         </select>
                     </div>
 
@@ -70,74 +65,147 @@
                         <input id="precio_total" type="number" step="0.01" placeholder="0.00" required>
                     </div>
 
-                    <button type="submit" id="btn-submit" style="margin-top: 1rem;">
+                    <div class="form-group"
+                        style="display: flex; align-items: center; gap: 0.75rem; background: rgba(99, 102, 241, 0.05); padding: 1rem; border-radius: 12px; border: 1px solid rgba(99, 102, 241, 0.1);">
+                        <input type="checkbox" id="es_oferta" style="width: 20px; height: 20px; margin: 0;">
+                        <label for="es_oferta"
+                            style="margin: 0; cursor: pointer; color: var(--primary); font-weight:700;">¿Es una
+                            Oferta?</label>
+                    </div>
+
+                    <div id="oferta-extra" class="form-group" style="display: none; margin-top: 1rem;">
+                        <label for="tipo_oferta">Detalle de la oferta</label>
+                        <input id="tipo_oferta" type="text" placeholder="Ej: 2ª unidad al 50%">
+                    </div>
+
+                    <button type="submit" id="btn-submit" style="margin-top: 1.5rem;">
                         <i data-lucide="shield-check"></i>
-                        Registrar Datos
+                        <span id="btn-text">Guardar Registro</span>
                     </button>
+
+                    <a href="index.html"
+                        style="display: block; text-align: center; margin-top: 1.5rem; text-decoration: none; color: var(--text-muted); font-weight: 600;">Regresar</a>
                 </form>
             </section>
         </main>
     </div>
 
-    <!-- Scripts -->
     <script src="/config.js"></script>
     <script src="/js/api.js"></script>
     <script src="/js/components.js"></script>
     <script>
-        async function loadCatalog() {
+        let allProducts = [];
+        let editId = new URLSearchParams(window.location.search).get('id');
+
+        const UNIDADES_DEFAULT = [
+            { v: 'kg', n: 'kg' }, { v: 'g', n: 'gramos (g)' },
+            { v: 'L', n: 'Litros (L)' }, { v: 'ml', n: 'ml' },
+            { v: 'ud', n: 'unidades (ud)' }
+        ];
+
+        async function initForm() {
             try {
-                const [productos, supers, marcas] = await Promise.all([
+                const [productos, supers] = await Promise.all([
                     ApiService.getCatalogProductos(),
-                    ApiService.getCatalogSupermercados(),
-                    ApiService.getCatalogMarcas()
+                    ApiService.getCatalogSupermercados()
                 ]);
+
+                allProducts = productos;
 
                 const prodSelect = document.getElementById("producto_id");
                 const superSelect = document.getElementById("supermercado_id");
-                const marcaSelect = document.getElementById("marca_id");
 
                 prodSelect.innerHTML = '<option value="">Selecciona producto...</option>' +
-                    productos.map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
+                    productos.sort((a, b) => a.nombre.localeCompare(b.nombre)).map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
 
-                superSelect.innerHTML = '<option value="">Establecimiento...</option>' +
-                    supers.map(s => `<option value="${s.id}">${s.nombre}</option>`).join('');
+                superSelect.innerHTML = '<option value="">Selecciona súper...</option>' +
+                    supers.sort((a, b) => a.nombre.localeCompare(b.nombre)).map(s => `<option value="${s.id}">${s.nombre}</option>`).join('');
 
-                marcaSelect.innerHTML = '<option value="">Marca...</option>' +
-                    marcas.map(m => `<option value="${m.id}">${m.nombre}</option>`).join('');
+                prodSelect.addEventListener('change', syncSelectors);
 
-            } catch (error) {
-                console.error(error);
+                if (editId) {
+                    document.getElementById('form-title').textContent = "Editar Registro";
+                    document.getElementById('btn-text').textContent = "Actualizar Registro";
+                    await loadEditData();
+                }
+
+            } catch (error) { console.error(error); }
+        }
+
+        function syncSelectors() {
+            const pId = document.getElementById("producto_id").value;
+            const marcaSelect = document.getElementById("marca_id");
+            const unidadSelect = document.getElementById("unidad");
+
+            if (!pId) {
+                marcaSelect.innerHTML = '<option value="">Elige producto primero...</option>';
+                unidadSelect.innerHTML = '<option value="">Selecciona...</option>';
+                return;
+            }
+
+            const product = allProducts.find(p => p.id == pId);
+
+            // 1. Marcas
+            if (product.marcas.length > 0) {
+                marcaSelect.innerHTML = '<option value="">Selecciona marca...</option>' +
+                    product.marcas.map(m => `<option value="${m.id}">${m.nombre}</option>`).join('');
+            } else {
+                marcaSelect.innerHTML = '<option value="">Sin marcas vinculadas</option>';
+            }
+
+            // 2. Unidades
+            if (product.unidades_permitidas) {
+                const allowed = product.unidades_permitidas.split(',').map(u => u.trim());
+                unidadSelect.innerHTML = allowed.map(u => `<option value="${u}">${u}</option>`).join('');
+            } else {
+                unidadSelect.innerHTML = UNIDADES_DEFAULT.map(u => `<option value="${u.v}">${u.n}</option>`).join('');
             }
         }
+
+        async function loadEditData() {
+            const data = await ApiService.getPrecio(editId);
+            document.getElementById("producto_id").value = data.producto_id;
+            syncSelectors();
+            document.getElementById("marca_id").value = data.marca_id;
+            document.getElementById("supermercado_id").value = data.supermercado_id;
+            document.getElementById("cantidad").value = data.cantidad;
+            document.getElementById("unidad").value = data.unidad;
+            document.getElementById("precio_total").value = data.precio_total;
+            document.getElementById("es_oferta").checked = data.es_oferta;
+            document.getElementById("tipo_oferta").value = data.tipo_oferta || "";
+            if (data.es_oferta) document.getElementById("oferta-extra").style.display = "block";
+        }
+
+        document.getElementById("es_oferta").addEventListener('change', (e) => {
+            document.getElementById("oferta-extra").style.display = e.target.checked ? "block" : "none";
+        });
 
         document.getElementById("price-form").addEventListener("submit", async (e) => {
             e.preventDefault();
             const btn = document.getElementById("btn-submit");
-            const data = {
+            const payload = {
                 producto_id: parseInt(document.getElementById("producto_id").value),
                 marca_id: parseInt(document.getElementById("marca_id").value),
                 supermercado_id: parseInt(document.getElementById("supermercado_id").value),
                 cantidad: parseFloat(document.getElementById("cantidad").value),
                 unidad: document.getElementById("unidad").value,
-                precio_total: parseFloat(document.getElementById("precio_total").value)
+                precio_total: parseFloat(document.getElementById("precio_total").value),
+                es_oferta: document.getElementById("es_oferta").checked,
+                tipo_oferta: document.getElementById("tipo_oferta").value || null
             };
 
             try {
                 btn.disabled = true;
-                btn.innerHTML = `<i data-lucide="loader-2" class="animate-spin"></i> Registrando...`;
-                lucide.createIcons();
-
-                await ApiService.createPrecio(data);
+                if (editId) await ApiService.updatePrecio(editId, payload);
+                else await ApiService.createPrecio(payload);
                 window.location.href = "index.html";
             } catch (error) {
                 alert("Error: " + error.message);
                 btn.disabled = false;
-                btn.innerHTML = `<i data-lucide="shield-check"></i> Registrar Datos`;
-                lucide.createIcons();
             }
         });
 
-        document.addEventListener("DOMContentLoaded", loadCatalog);
+        document.addEventListener("DOMContentLoaded", initForm);
     </script>
 </body>
 
