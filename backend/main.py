@@ -4,15 +4,17 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from datetime import datetime
 
+from fastapi.staticfiles import StaticFiles
 from . import models, schemas
 from .database import engine, SessionLocal
 
-# Re-crear tablas (limpieza para el nuevo modelo profundo)
-models.Base.metadata.drop_all(bind=engine)
+# Re-crear tablas (Nota: en producción con Postgres podrías querer usar migraciones como Alembic)
+# Pero para la PoC lo dejamos así para que funcione al arrancar
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="PriceTracker Pro Anti-Scam API")
 
+# CORS (relevante para desarrollo, en producción serviremos todo desde el mismo origen)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -20,6 +22,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Servir el frontend como archivos estáticos
+# IMPORTANTE: Esto debe ir DESPUÉS de definir las rutas de la API
+# o usar un prefijo para la API
 
 def get_db():
     db = SessionLocal()
@@ -76,6 +82,20 @@ def get_supermercados(db: Session = Depends(get_db)):
 def get_marcas(db: Session = Depends(get_db)):
     return db.query(models.Marca).all()
 
+import os
+from fastapi import FastAPI, Depends, HTTPException, Response
+# ... otros imports se mantienen ...
+
+# --- Endpoints de Configuración ---
+
+@app.get("/config.js")
+def get_config():
+    # Esta variable la pondrás en Render como BACKEND_URL = https://tu-app.onrender.com
+    # En local, el fallback será http://127.0.0.1:8000
+    backend_url = os.getenv("BACKEND_URL", "http://127.0.0.1:8000")
+    content = f"window.BACKEND_URL = '{backend_url}';"
+    return Response(content=content, media_type="application/javascript")
+
 # --- Registro de Precios ---
 
 @app.post("/precios", status_code=201)
@@ -118,3 +138,6 @@ def listar_precios(db: Session = Depends(get_db)):
             "fecha": p.fecha
         })
     return resultado
+
+# Montar el frontend
+app.mount("/", StaticFiles(directory="frontend", html=True), name="frontend")

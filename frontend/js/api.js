@@ -1,4 +1,6 @@
-const API_URL = "http://127.0.0.1:8000";
+// Detectar si tenemos una URL configurada por el servidor (window.BACKEND_URL)
+// O usar el fallback local
+const API_URL = window.BACKEND_URL || "http://127.0.0.1:8000";
 
 const ApiService = {
     async getPrecios() {

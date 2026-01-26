@@ -28,13 +28,13 @@
                 <form id="price-form">
                     <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                         <div>
-                            <label for="producto_id">Producto (Tipo)</label>
+                            <label for="producto_id">Producto</label>
                             <select id="producto_id" class="custom-select" required>
                                 <option value="">Cargando catálogo...</option>
                             </select>
                         </div>
                         <div>
-                            <label for="marca_id">Marca / Fabricante</label>
+                            <label for="marca_id">Marca</label>
                             <select id="marca_id" class="custom-select" required>
                                 <option value="">Cargando marcas...</option>
                             </select>
@@ -47,9 +47,9 @@
                             <input id="cantidad" type="number" step="0.001" placeholder="Ej: 1.5 o 500" required>
                         </div>
                         <div>
-                            <label for="unidad">Unidad de Medida</label>
+                            <label for="unidad">Unidad</label>
                             <select id="unidad" class="custom-select" required>
-                                <option value="kg">kilogramos (kg)</option>
+                                <option value="kg">kg</option>
                                 <option value="g">gramos (g)</option>
                                 <option value="L">Litros (L)</option>
                                 <option value="ml">mililitros (ml)</option>
@@ -66,28 +66,13 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="precio_total">Precio Pagado Final (€)</label>
+                        <label for="precio_total">Precio Total Pagado (€)</label>
                         <input id="precio_total" type="number" step="0.01" placeholder="0.00" required>
-                        <small style="color: var(--text-muted); display: block; margin-top: 0.25rem;">Introduce el
-                            precio real que pagaste en caja.</small>
-                    </div>
-
-                    <div class="form-group"
-                        style="background: rgba(99, 102, 241, 0.05); padding: 1rem; border-radius: 10px; border: 1px solid rgba(99, 102, 241, 0.1);">
-                        <label
-                            style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; color: var(--primary);">
-                            <input id="es_oferta" type="checkbox" style="width: auto;">
-                            <span>¿Es una oferta? (3x2, 2ª unidad, etc.)</span>
-                        </label>
-                        <div id="offer-details" style="display: none; margin-top: 1rem;">
-                            <label for="tipo_oferta">Describe la oferta</label>
-                            <input id="tipo_oferta" type="text" placeholder="Ej: 3x2 o Segunda al 70%">
-                        </div>
                     </div>
 
                     <button type="submit" id="btn-submit" style="margin-top: 1rem;">
                         <i data-lucide="shield-check"></i>
-                        Registrar para Análisis
+                        Registrar Datos
                     </button>
                 </form>
             </section>
@@ -95,14 +80,10 @@
     </div>
 
     <!-- Scripts -->
+    <script src="/config.js"></script>
     <script src="js/api.js"></script>
     <script src="js/components.js"></script>
     <script>
-        // Toggle detalles de oferta
-        document.getElementById("es_oferta").addEventListener("change", (e) => {
-            document.getElementById("offer-details").style.display = e.target.checked ? "block" : "none";
-        });
-
         async function loadCatalog() {
             try {
                 const [productos, supers, marcas] = await Promise.all([
@@ -115,7 +96,7 @@
                 const superSelect = document.getElementById("supermercado_id");
                 const marcaSelect = document.getElementById("marca_id");
 
-                prodSelect.innerHTML = '<option value="">Tipo de producto...</option>' +
+                prodSelect.innerHTML = '<option value="">Selecciona producto...</option>' +
                     productos.map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
 
                 superSelect.innerHTML = '<option value="">Establecimiento...</option>' +
@@ -138,22 +119,20 @@
                 supermercado_id: parseInt(document.getElementById("supermercado_id").value),
                 cantidad: parseFloat(document.getElementById("cantidad").value),
                 unidad: document.getElementById("unidad").value,
-                precio_total: parseFloat(document.getElementById("precio_total").value),
-                es_oferta: document.getElementById("es_oferta").checked,
-                tipo_oferta: document.getElementById("tipo_oferta").value || null
+                precio_total: parseFloat(document.getElementById("precio_total").value)
             };
 
             try {
                 btn.disabled = true;
-                btn.innerHTML = `<i data-lucide="loader-2" class="animate-spin"></i> Procesando...`;
+                btn.innerHTML = `<i data-lucide="loader-2" class="animate-spin"></i> Registrando...`;
                 lucide.createIcons();
 
                 await ApiService.createPrecio(data);
                 window.location.href = "index.html";
             } catch (error) {
-                alert("Error al registrar: " + error.message);
+                alert("Error: " + error.message);
                 btn.disabled = false;
-                btn.innerHTML = `<i data-lucide="shield-check"></i> Registrar para Análisis`;
+                btn.innerHTML = `<i data-lucide="shield-check"></i> Registrar Datos`;
                 lucide.createIcons();
             }
         });

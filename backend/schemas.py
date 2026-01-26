@@ -44,5 +44,5 @@ class PrecioDisplay(BaseModel):
     precio_total: float
     precio_unidad: float
     es_oferta: bool
-    tipo_oferta: Optional[str]
+    tipo_oferta: Optional[str] = None
     fecha: str
