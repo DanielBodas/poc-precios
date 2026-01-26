@@ -206,19 +206,6 @@ def delete_precio(id: int, db: Session = Depends(get_db)):
     db.commit()
     return {"status": "ok"}
 
-from fastapi.responses import FileResponse
-
-@app.get("/")
-def read_root():
-    return FileResponse(os.path.join("frontend", "index.html"))
-
-@app.get("/add")
-def read_add():
-    return FileResponse(os.path.join("frontend", "add.html"))
-
-@app.get("/catalog")
-def read_catalog():
-    return FileResponse(os.path.join("frontend", "catalog.html"))
-
 # Montar el frontend para archivos estáticos (js, css, etc)
-app.mount("/", StaticFiles(directory="frontend"), name="frontend")
+# html=True permite que '/' busque 'index.html' automáticamente
+app.mount("/", StaticFiles(directory="frontend", html=True), name="frontend")

@@ -15,7 +15,7 @@ function initNavbar() {
                     <i data-lucide="plus-circle"></i>
                     <span>Nuevo Precio</span>
                 </a>
-                <a href="/catalog" class="nav-link ${window.location.pathname === '/catalog' ? 'active' : ''}">
+                <a href="catalog.html" class="nav-link ${window.location.pathname.endsWith('catalog.html') ? 'active' : ''}">
                     <i data-lucide="settings-2"></i>
                     <span>Gestión</span>
                 </a>

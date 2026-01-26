@@ -61,20 +61,6 @@
             display: flex;
             gap: 0.5rem;
         }
-
-        .tab-btn {
-            padding: 0.5rem 1rem;
-            background: transparent;
-            color: var(--text-muted);
-            width: auto;
-            border-radius: 0;
-            border-bottom: 2px solid transparent;
-        }
-
-        .tab-btn.active {
-            color: var(--primary);
-            border-bottom-color: var(--primary);
-        }
     </style>
 </head>
 
@@ -87,7 +73,6 @@
         </header>
 
         <main class="admin-grid">
-            <!-- Gestión de Categorías -->
             <section class="admin-section">
                 <div style="display: flex; align-items: center; gap: 0.5rem; color: var(--primary);">
                     <i data-lucide="tag"></i>
@@ -100,7 +85,6 @@
                 <div id="list-categorias" class="item-list"></div>
             </section>
 
-            <!-- Gestión de Marcas -->
             <section class="admin-section">
                 <div style="display: flex; align-items: center; gap: 0.5rem; color: var(--primary);">
                     <i data-lucide="award"></i>
@@ -113,7 +97,6 @@
                 <div id="list-marcas" class="item-list"></div>
             </section>
 
-            <!-- Gestión de Supermercados -->
             <section class="admin-section">
                 <div style="display: flex; align-items: center; gap: 0.5rem; color: var(--primary);">
                     <i data-lucide="store"></i>
@@ -126,7 +109,6 @@
                 <div id="list-super" class="item-list"></div>
             </section>
 
-            <!-- Gestión de Productos -->
             <section class="admin-section">
                 <div style="display: flex; align-items: center; gap: 0.5rem; color: var(--primary);">
                     <i data-lucide="package"></i>
@@ -162,7 +144,6 @@
                 renderList("list-super", supers, 'deleteSupermercado');
                 renderList("list-productos", prods, 'deleteProducto');
 
-                // Llenar select de categorías para nuevos productos
                 const catSelect = document.getElementById("new-prod-cat");
                 catSelect.innerHTML = cats.map(c => `<option value="${c.id}">${c.nombre}</option>`).join('');
 
@@ -187,9 +168,7 @@
             try {
                 await ApiService[apiMethodName](id);
                 loadAll();
-            } catch (e) {
-                alert("Error al eliminar: " + e.message);
-            }
+            } catch (e) { alert("Error al eliminar: " + e.message); }
         }
 
         async function addCategoria() {
@@ -230,4 +209,3 @@
 </body>
 
 </html>
-```
