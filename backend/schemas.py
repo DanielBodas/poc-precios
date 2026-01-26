@@ -5,8 +5,7 @@ from typing import List, Optional
 class CategoriaBase(BaseModel):
     nombre: str
 
-class CategoriaCreate(CategoriaBase):
-    pass
+class CategoriaCreate(CategoriaBase): pass
 
 class Categoria(CategoriaBase):
     id: int
@@ -16,21 +15,9 @@ class Categoria(CategoriaBase):
 class MarcaBase(BaseModel):
     nombre: str
 
-class MarcaCreate(MarcaBase):
-    pass
+class MarcaCreate(MarcaBase): pass
 
 class Marca(MarcaBase):
-    id: int
-    class Config: from_attributes = True
-
-# --- Supermercado ---
-class SupermercadoBase(BaseModel):
-    nombre: str
-
-class SupermercadoCreate(SupermercadoBase):
-    pass
-
-class Supermercado(SupermercadoBase):
     id: int
     class Config: from_attributes = True
 
@@ -38,13 +25,24 @@ class Supermercado(SupermercadoBase):
 class ProductoBase(BaseModel):
     nombre: str
     categoria_id: int
+    unidades_permitidas: Optional[str] = None
 
-class ProductoCreate(ProductoBase):
-    pass
+class ProductoCreate(ProductoBase): pass
 
 class Producto(ProductoBase):
     id: int
     categoria: Optional[Categoria] = None
+    marcas: List[Marca] = []
+    class Config: from_attributes = True
+
+# --- Supermercado ---
+class SupermercadoBase(BaseModel):
+    nombre: str
+
+class SupermercadoCreate(SupermercadoBase): pass
+
+class Supermercado(SupermercadoBase):
+    id: int
     class Config: from_attributes = True
 
 # --- Precio ---
@@ -58,8 +56,21 @@ class PrecioCreate(BaseModel):
     es_oferta: bool = False
     tipo_oferta: Optional[str] = None
 
+class PrecioUpdate(BaseModel):
+    producto_id: Optional[int] = None
+    marca_id: Optional[int] = None
+    supermercado_id: Optional[int] = None
+    cantidad: Optional[float] = None
+    unidad: Optional[str] = None
+    precio_total: Optional[float] = None
+    es_oferta: Optional[bool] = None
+    tipo_oferta: Optional[str] = None
+
 class PrecioDisplay(BaseModel):
     id: int
+    producto_id: int
+    marca_id: int
+    supermercado_id: int
     producto: str
     marca: str
     categoria: str
@@ -71,3 +82,8 @@ class PrecioDisplay(BaseModel):
     es_oferta: bool
     tipo_oferta: Optional[str] = None
     fecha: str
+
+# Relaciones
+class LinkProductoMarca(BaseModel):
+    producto_id: int
+    marca_id: int

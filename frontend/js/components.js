@@ -8,12 +8,16 @@ function initNavbar() {
             </a>
             <div class="nav-links">
                 <a href="index.html" class="nav-link ${window.location.pathname.endsWith('index.html') || window.location.pathname === '/' ? 'active' : ''}">
-                    <i data-lucide="bar-chart-2"></i>
-                    <span>Análisis</span>
+                    <i data-lucide="layout-dashboard"></i>
+                    <span>Inicio</span>
                 </a>
                 <a href="add.html" class="nav-link ${window.location.pathname.endsWith('add.html') ? 'active' : ''}">
                     <i data-lucide="plus-circle"></i>
-                    <span>Nuevo Precio</span>
+                    <span>Añadir</span>
+                </a>
+                <a href="compare.html" class="nav-link ${window.location.pathname.endsWith('compare.html') ? 'active' : ''}">
+                    <i data-lucide="bar-chart-3"></i>
+                    <span>Comparativa</span>
                 </a>
                 <a href="catalog.html" class="nav-link ${window.location.pathname.endsWith('catalog.html') ? 'active' : ''}">
                     <i data-lucide="settings-2"></i>

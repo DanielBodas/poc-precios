@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asistente de Compra — PriceTracker Pro</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="/css/main.css">
+    <style>
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .kpi-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: var(--radius);
+            border: 1px solid var(--glass-border);
+            text-align: center;
+        }
+
+        .kpi-value {
+            font-size: 1.75rem;
+            font-weight: 800;
+            color: var(--primary);
+            margin: 0.5rem 0;
+        }
+
+        .kpi-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            font-weight: 700;
+            color: var(--text-muted);
+            letter-spacing: 0.05em;
+        }
+
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .history-table th,
+        .history-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .history-table th {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--text-muted);
+        }
+
+        .trend-up {
+            color: #ef4444;
+        }
+
+        .trend-down {
+            color: #22c55e;
+        }
+
+        #chart-container {
+            background: white;
+            padding: 1.5rem;
+            border-radius: var(--radius);
+            border: 1px solid var(--glass-border);
+            margin-bottom: 2rem;
+            height: 300px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1 class="page-title">Asistente de Compra</h1>
+            <p style="color: var(--text-muted); margin-bottom: 2rem;">Busca un producto para ver su evolución y decidir
+                si es un buen momento para comprarlo.</p>
+
+            <div class="card" style="padding: 1rem; margin-bottom: 2rem;">
+                <label class="kpi-label">Selecciona un producto del catálogo</label>
+                <select id="select-doc-compare" class="custom-select" style="margin-top: 0.5rem;">
+                    <option value="">Cargando catálogo...</option>
+                </select>
+            </div>
+        </header>
+
+        <main id="analysis-content" style="display: none;">
+            <!-- KPIs -->
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-label">Último Precio Unit.</div>
+                    <div id="kpi-last" class="kpi-value">--</div>
+                    <div id="kpi-last-store" style="font-size: 0.8rem; color: var(--text-muted);">--</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Media Histórica</div>
+                    <div id="kpi-avg" class="kpi-value">--</div>
+                    <div id="kpi-vs-avg" style="font-size: 0.8rem; font-weight: 700;">--</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Mejor Precio (Record)</div>
+                    <div id="kpi-min" class="kpi-value" style="color: var(--success);">--</div>
+                    <div id="kpi-min-store" style="font-size: 0.8rem; color: var(--text-muted);">--</div>
+                </div>
+            </div>
+
+            <!-- Gráfico -->
+            <div id="chart-container">
+                <canvas id="priceChart"></canvas>
+            </div>
+
+            <!-- Tabla de Historial -->
+            <section class="card">
+                <h2 style="font-size: 1.25rem; font-weight: 800; margin-bottom: 1.5rem;">Historial Detallado</h2>
+                <div style="overflow-x: auto;">
+                    <table class="history-table">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Precio Unit.</th>
+                                <th>Súper</th>
+                                <th>Marca</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-body"></tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+
+        <div id="empty-state-search" class="empty-state">
+            <i data-lucide="search" style="width: 48px; height: 48px; margin-bottom: 1rem; opacity: 0.3;"></i>
+            <p>Selecciona un producto arriba para ver su análisis histórico.</p>
+        </div>
+    </div>
+
+    <script src="/config.js"></script>
+    <script src="/js/api.js"></script>
+    <script src="/js/components.js"></script>
+    <script>
+        let priceChart = null;
+
+        async function init() {
+            const prods = await ApiService.getCatalogProductos();
+            const select = document.getElementById("select-doc-compare");
+
+            select.innerHTML = '<option value="">Busca un producto...</option>' +
+                prods.sort((a, b) => a.nombre.localeCompare(b.nombre)).map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
+
+            select.addEventListener('change', (e) => loadProductAnalysis(e.target.value));
+        }
+
+        async function loadProductAnalysis(prodId) {
+            if (!prodId) {
+                document.getElementById('analysis-content').style.display = 'none';
+                document.getElementById('empty-state-search').style.display = 'block';
+                return;
+            }
+
+            document.getElementById('analysis-content').style.display = 'block';
+            document.getElementById('empty-state-search').style.display = 'none';
+
+            const history = await ApiService.getPrecioHistorial(prodId);
+            if (history.length === 0) return;
+
+            renderKPIs(history);
+            renderChart(history);
+            renderTable(history);
+        }
+
+        function renderKPIs(history) {
+            const unitPrices = history.map(h => h.precio_unidad);
+            const last = history[0];
+            const min = Math.min(...unitPrices);
+            const avg = unitPrices.reduce((a, b) => a + b, 0) / unitPrices.length;
+
+            document.getElementById('kpi-last').textContent = last.precio_unidad.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 3 }) + '€';
+            document.getElementById('kpi-last-store').textContent = `En ${last.supermercado} (${last.marca})`;
+
+            document.getElementById('kpi-min').textContent = min.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 3 }) + '€';
+            const bestEntry = history.find(h => h.precio_unidad === min);
+            document.getElementById('kpi-min-store').textContent = `Mínimo en ${bestEntry.supermercado}`;
+
+            document.getElementById('kpi-avg').textContent = avg.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 3 }) + '€';
+
+            const vsAvg = ((last.precio_unidad - avg) / avg * 100);
+            const vsAvgEl = document.getElementById('kpi-vs-avg');
+
+            if (vsAvg > 0) {
+                vsAvgEl.textContent = `+${vsAvg.toFixed(1)}% caro que la media`;
+                vsAvgEl.className = 'trend-up';
+            } else {
+                vsAvgEl.textContent = `${vsAvg.toFixed(1)}% más barato`;
+                vsAvgEl.className = 'trend-down';
+            }
+        }
+
+        function renderChart(history) {
+            const ctx = document.getElementById('priceChart').getContext('2d');
+            const data = [...history].reverse(); // Orden cronológico para el eje X
+
+            if (priceChart) priceChart.destroy();
+
+            priceChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.map(h => new Date(h.fecha).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })),
+                    datasets: [{
+                        label: 'Precio por Unidad (€)',
+                        data: data.map(h => h.precio_unidad),
+                        borderColor: '#6366f1',
+                        backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#6366f1'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: false, grid: { color: 'rgba(0,0,0,0.05)' } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        function renderTable(history) {
+            const tbody = document.getElementById('history-body');
+            tbody.innerHTML = history.map(h => {
+                const date = new Date(h.fecha).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: '2-digit' });
+                return `
+                    <tr>
+                        <td><span style="font-weight:700;">${date}</span></td>
+                        <td style="font-weight:800; color:var(--primary);">${h.precio_unidad.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 3 })}€</td>
+                        <td>${h.supermercado}</td>
+                        <td>${h.marca}</td>
+                        <td>${h.es_oferta ? '<span class="badge" style="background:#fef3c7; color:#92400e;">Oferta</span>' : '<span class="badge badge-info">Normal</span>'}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        document.addEventListener("DOMContentLoaded", init);
+    </script>
+</body>
+
+</html>

@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestión del Sistema — PriceTracker Pro</title>
+    <title>Configuración — PriceTracker Pro</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,123 +14,466 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="/css/main.css">
     <style>
-        .admin-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-            gap: 2rem;
+        :root {
+            --sidebar-width: 240px;
         }
 
-        .admin-section {
-            background: var(--card-bg);
-            backdrop-filter: blur(12px);
-            border: 1px solid var(--glass-border);
-            border-radius: var(--radius);
+        body {
+            padding-top: 0;
+            display: flex;
+            background: #f1f5f9;
+        }
+
+        /* Layout Admin */
+        .admin-layout {
+            display: flex;
+            width: 100%;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .admin-sidebar {
+            width: var(--sidebar-width);
+            background: white;
+            border-right: 1px solid var(--glass-border);
+            position: fixed;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
             padding: 1.5rem;
+            z-index: 1001;
+        }
+
+        .sidebar-brand {
+            margin-bottom: 2.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 800;
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .sidebar-nav {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            flex-grow: 1;
+        }
+
+        .side-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 0.8rem 1rem;
+            text-decoration: none;
+            color: var(--text-muted);
+            font-weight: 600;
+            border-radius: 12px;
+            transition: all 0.2s;
+            border: none;
+            background: transparent;
+            width: 100%;
+            cursor: pointer;
+            text-align: left;
+        }
+
+        .side-link:hover {
+            background: rgba(99, 102, 241, 0.05);
+            color: var(--primary);
+        }
+
+        .side-link.active {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+        }
+
+        /* Main Content Area */
+        .admin-main {
+            flex-grow: 1;
+            margin-left: var(--sidebar-width);
+            padding: 2.5rem;
+            max-width: calc(100vw - var(--sidebar-width));
+        }
+
+        /* Content Sections */
+        .admin-section {
+            display: none;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        .admin-section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Lists & Tables */
+        .data-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .search-box {
+            position: relative;
+            max-width: 400px;
+            width: 100%;
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            width: 18px;
+        }
+
+        .search-box input {
+            padding-left: 3rem;
+        }
+
+        .management-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .entity-card {
+            background: white;
+            border-radius: 16px;
+            border: 1px solid var(--glass-border);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card-header {
+            padding: 1.25rem;
+            background: rgba(0, 0, 0, 0.02);
+            border-bottom: 1px solid var(--glass-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-body {
+            padding: 1.25rem;
+            flex-grow: 1;
+        }
+
+        .list-scroll {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 1rem;
+        }
+
+        /* Relationship Mapping Visualizer */
+        .mapper-container {
             display: flex;
             flex-direction: column;
             gap: 1rem;
         }
 
-        .item-list {
-            max-height: 300px;
-            overflow-y: auto;
-            border-top: 1px solid var(--glass-border);
-            padding-top: 1rem;
-        }
-
-        .list-row {
+        .mapping-row {
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            padding: 0.5rem 0;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            gap: 1.5rem;
+            background: white;
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            border: 1px solid var(--glass-border);
         }
 
-        .btn-small {
-            padding: 0.25rem 0.5rem;
-            font-size: 0.75rem;
-            width: auto;
-            background: #ef4444;
+        .mapping-product {
+            flex: 0 0 250px;
+            font-weight: 800;
+            color: var(--text-dark);
         }
 
-        .btn-small:hover {
-            background: #dc2626;
-        }
-
-        .input-group {
+        .mapping-brands {
+            flex-grow: 1;
             display: flex;
+            flex-wrap: wrap;
             gap: 0.5rem;
+        }
+
+        .btn-add-rel {
+            padding: 0.5rem;
+            background: rgba(99, 102, 241, 0.1);
+            color: var(--primary);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+        }
+
+        .btn-add-rel:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        .empty-indicator {
+            padding: 1rem;
+            background: #f8fafc;
+            border-radius: 12px;
+            border: 2px dashed #e2e8f0;
+            text-align: center;
+            color: #94a3b8;
+            font-size: 0.85rem;
+        }
+
+        /* Responsive Mobile Sidebar */
+        @media (max-width: 768px) {
+            .admin-sidebar {
+                width: 70px;
+                padding: 1rem 0.5rem;
+            }
+
+            .sidebar-brand span,
+            .side-link span {
+                display: none;
+            }
+
+            .sidebar-brand {
+                justify-content: center;
+            }
+
+            .side-link {
+                justify-content: center;
+                padding: 1rem;
+            }
+
+            .admin-main {
+                margin-left: 70px;
+                padding: 1.5rem;
+                max-width: calc(100vw - 70px);
+            }
+
+            .mapping-row {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.75rem;
+            }
+
+            .mapping-product {
+                flex-basis: auto;
+            }
         }
     </style>
 </head>
 
 <body>
-    <div class="container">
-        <header>
-            <h1 class="page-title">Panel de Administración</h1>
-            <p style="color: var(--text-muted); margin-bottom: 2rem;">Gestiona los pilares de tu base de datos para
-                mantener el sistema sólido.</p>
-        </header>
-
-        <main class="admin-grid">
-            <section class="admin-section">
-                <div style="display: flex; align-items: center; gap: 0.5rem; color: var(--primary);">
-                    <i data-lucide="tag"></i>
-                    <h2 style="font-size: 1.25rem; font-weight: 700;">Categorías</h2>
-                </div>
-                <div class="input-group">
-                    <input id="new-cat" type="text" placeholder="Nueva categoría...">
-                    <button onclick="addCategoria()" style="width: auto; padding: 0.75rem 1rem;">Añadir</button>
-                </div>
-                <div id="list-categorias" class="item-list"></div>
-            </section>
-
-            <section class="admin-section">
-                <div style="display: flex; align-items: center; gap: 0.5rem; color: var(--primary);">
-                    <i data-lucide="award"></i>
-                    <h2 style="font-size: 1.25rem; font-weight: 700;">Marcas</h2>
-                </div>
-                <div class="input-group">
-                    <input id="new-marca" type="text" placeholder="Nueva marca...">
-                    <button onclick="addMarca()" style="width: auto; padding: 0.75rem 1rem;">Añadir</button>
-                </div>
-                <div id="list-marcas" class="item-list"></div>
-            </section>
-
-            <section class="admin-section">
-                <div style="display: flex; align-items: center; gap: 0.5rem; color: var(--primary);">
-                    <i data-lucide="store"></i>
-                    <h2 style="font-size: 1.25rem; font-weight: 700;">Supermercados</h2>
-                </div>
-                <div class="input-group">
-                    <input id="new-super" type="text" placeholder="Nuevo súper...">
-                    <button onclick="addSuper()" style="width: auto; padding: 0.75rem 1rem;">Añadir</button>
-                </div>
-                <div id="list-super" class="item-list"></div>
-            </section>
-
-            <section class="admin-section">
-                <div style="display: flex; align-items: center; gap: 0.5rem; color: var(--primary);">
+    <div class="admin-layout">
+        <aside class="admin-sidebar">
+            <a href="index.html" class="sidebar-brand">
+                <i data-lucide="shield-check"></i>
+                <span>PriceTracker Pro</span>
+            </a>
+            <nav class="sidebar-nav">
+                <button class="side-link active" onclick="switchSection('section-entities')">
+                    <i data-lucide="database"></i>
+                    <span>Base de Datos</span>
+                </button>
+                <button class="side-link" onclick="switchSection('section-catalog')">
                     <i data-lucide="package"></i>
-                    <h2 style="font-size: 1.25rem; font-weight: 700;">Productos</h2>
+                    <span>Mi Catálogo</span>
+                </button>
+                <button class="side-link" onclick="switchSection('section-rels')">
+                    <i data-lucide="git-merge"></i>
+                    <span>Inteligencia</span>
+                </button>
+                <div style="margin-top: auto; border-top: 1px solid #f1f5f9; padding-top: 1rem;">
+                    <a href="index.html" class="side-link">
+                        <i data-lucide="arrow-left"></i>
+                        <span>Ir al Muro</span>
+                    </a>
                 </div>
-                <div class="input-group" style="flex-direction: column;">
-                    <input id="new-prod-name" type="text" placeholder="Nombre completo del producto...">
-                    <div style="display: flex; gap: 0.5rem;">
-                        <select id="new-prod-cat" class="custom-select" style="margin-bottom: 0;"></select>
-                        <button onclick="addProducto()" style="width: auto; padding: 0.75rem 1rem;">Añadir</button>
+            </nav>
+        </aside>
+
+        <main class="admin-main">
+            <!-- SECCIÓN 1: ENTIDADES BASE -->
+            <section id="section-entities" class="admin-section active">
+                <div class="data-header">
+                    <div>
+                        <h2 class="page-title" style="margin-bottom: 0.5rem;">Base de Datos</h2>
+                        <p style="color: var(--text-muted);">Gestiona categorías, fabricantes y establecimientos
+                            pilares.</p>
                     </div>
                 </div>
-                <div id="list-productos" class="item-list"></div>
+
+                <div class="management-grid">
+                    <!-- Categorías -->
+                    <div class="entity-card">
+                        <div class="card-header">
+                            <span style="font-weight: 800; display: flex; align-items: center; gap: 8px;">
+                                <i data-lucide="tag" style="width: 18px; color: #f59e0b;"></i> Categorías
+                            </span>
+                            <span id="count-cats"
+                                style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700;">0 ítems</span>
+                        </div>
+                        <div class="card-body">
+                            <div style="display: flex; gap: 8px;">
+                                <input id="in-cat" type="text" placeholder="Añadir..." style="height: 42px;">
+                                <button onclick="quickAdd('Categoria','in-cat')"
+                                    style="width: 42px; padding: 0;">+</button>
+                            </div>
+                            <div id="list-cats" class="list-scroll"></div>
+                        </div>
+                    </div>
+
+                    <!-- Marcas -->
+                    <div class="entity-card">
+                        <div class="card-header">
+                            <span style="font-weight: 800; display: flex; align-items: center; gap: 8px;">
+                                <i data-lucide="award" style="width: 18px; color: #6366f1;"></i> Fabricantes / Marcas
+                            </span>
+                            <span id="count-marcas"
+                                style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700;">0 ítems</span>
+                        </div>
+                        <div class="card-body">
+                            <div style="display: flex; gap: 8px;">
+                                <input id="in-marca" type="text" placeholder="Añadir..." style="height: 42px;">
+                                <button onclick="quickAdd('Marca','in-marca')"
+                                    style="width: 42px; padding: 0;">+</button>
+                            </div>
+                            <div id="list-marcas" class="list-scroll"></div>
+                        </div>
+                    </div>
+
+                    <!-- Supermercados -->
+                    <div class="entity-card">
+                        <div class="card-header">
+                            <span style="font-weight: 800; display: flex; align-items: center; gap: 8px;">
+                                <i data-lucide="store" style="width: 18px; color: #10b981;"></i> Establecimientos
+                            </span>
+                            <span id="count-supers"
+                                style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700;">0 ítems</span>
+                        </div>
+                        <div class="card-body">
+                            <div style="display: flex; gap: 8px;">
+                                <input id="in-super" type="text" placeholder="Añadir..." style="height: 42px;">
+                                <button onclick="quickAdd('Supermercado','in-super')"
+                                    style="width: 42px; padding: 0;">+</button>
+                            </div>
+                            <div id="list-supers" class="list-scroll"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECCIÓN 2: CATÁLOGO DE PRODUCTOS -->
+            <section id="section-catalog" class="admin-section">
+                <div class="data-header">
+                    <div>
+                        <h2 class="page-title" style="margin-bottom: 0.5rem;">Mi Catálogo</h2>
+                        <p style="color: var(--text-muted);">Productos maestros que registras habitualmente.</p>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 350px 1fr; gap: 2rem; align-items: start;">
+                    <!-- Formulario lateral -->
+                    <div class="card" style="position: sticky; top: 2.5rem;">
+                        <h3 style="margin-bottom: 1.5rem; font-weight: 800;">Nuevo Maestro</h3>
+                        <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label>Nombre Comercial</label>
+                                <input id="p-name" type="text" placeholder="Ej: Café Molido Natural">
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label>Categoría</label>
+                                <select id="p-cat" class="custom-select"></select>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label>Unidades Sugeridas</label>
+                                <input id="p-units" type="text" placeholder="kg,g o ud">
+                            </div>
+                            <button onclick="createMasterProduct()" style="margin-top: 0.5rem;">
+                                <i data-lucide="save" style="width: 18px;"></i>
+                                Guardar en Catálogo
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Lista con buscador -->
+                    <div style="display: flex; flex-direction: column; gap: 1rem;">
+                        <div class="search-box">
+                            <i data-lucide="search"></i>
+                            <input type="text" id="search-prod" placeholder="Filtrar por nombre o categoría..."
+                                onkeyup="filterCatalog()">
+                        </div>
+                        <div id="catalog-list"
+                            style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem;">
+                            <!-- Items dinámicos -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECCIÓN 3: INTELIGENCIA RELACIONAL -->
+            <section id="section-rels" class="admin-section">
+                <div class="data-header">
+                    <div>
+                        <h2 class="page-title" style="margin-bottom: 0.5rem;">Inteligencia Relacional</h2>
+                        <p style="color: var(--text-muted);">Configura qué marcas pertenecen a qué producto para
+                            acelerar tus registros.</p>
+                    </div>
+                </div>
+
+                <div class="card"
+                    style="margin-bottom: 2rem; padding: 1.5rem; background: var(--primary); color: white;">
+                    <div style="display: flex; align-items: center; gap: 2rem; flex-wrap: wrap;">
+                        <div style="flex-grow: 1;">
+                            <label
+                                style="color:rgba(255,255,255,0.8); font-size: 0.75rem; text-transform: uppercase;">Producto
+                                Maestro</label>
+                            <select id="rel-p" class="custom-select"
+                                style="background: rgba(255,255,255,0.1); color: white; border-color: rgba(255,255,255,0.2);"></select>
+                        </div>
+                        <div style="flex-grow: 1;">
+                            <label
+                                style="color:rgba(255,255,255,0.8); font-size: 0.75rem; text-transform: uppercase;">Añadir
+                                Fabricante / Marca</label>
+                            <select id="rel-m" class="custom-select"
+                                style="background: rgba(255,255,255,0.1); color: white; border-color: rgba(255,255,255,0.2);"></select>
+                        </div>
+                        <button onclick="establishLink()"
+                            style="background: white; color: var(--primary); width: auto; padding: 0 2rem; align-self: flex-end; height: 48px;">
+                            Vincular Ahora
+                        </button>
+                    </div>
+                </div>
+
+                <div id="rel-matrix" class="mapper-container">
+                    <!-- Filas de relaciones dinámicas -->
+                </div>
             </section>
         </main>
     </div>
+
+    <!-- Modales o Notificaciones flotantes si hicieran falta -->
 
     <script src="/config.js"></script>
     <script src="/js/api.js"></script>
     <script src="/js/components.js"></script>
     <script>
-        async function loadAll() {
+        let fullData = { cats: [], marcas: [], supers: [], prods: [] };
+
+        async function init() {
             try {
                 const [cats, marcas, supers, prods] = await Promise.all([
                     ApiService.getCatalogCategorias(),
@@ -139,72 +482,150 @@
                     ApiService.getCatalogProductos()
                 ]);
 
-                renderList("list-categorias", cats, 'deleteCategoria');
-                renderList("list-marcas", marcas, 'deleteMarca');
-                renderList("list-super", supers, 'deleteSupermercado');
-                renderList("list-productos", prods, 'deleteProducto');
+                fullData = { cats, marcas, supers, prods };
 
-                const catSelect = document.getElementById("new-prod-cat");
-                catSelect.innerHTML = cats.map(c => `<option value="${c.id}">${c.nombre}</option>`).join('');
+                // Dashboard counts
+                document.getElementById('count-cats').textContent = `${cats.length} ítems`;
+                document.getElementById('count-marcas').textContent = `${marcas.length} ítems`;
+                document.getElementById('count-supers').textContent = `${supers.length} ítems`;
 
-            } catch (e) { console.error(e); }
+                // Render Base Entities
+                renderCompactList("list-cats", cats, 'deleteCategoria');
+                renderCompactList("list-marcas", marcas, 'deleteMarca');
+                renderCompactList("list-supers", supers, 'deleteSupermercado');
+
+                // Fill Selects
+                const populate = (id, items) => {
+                    const el = document.getElementById(id);
+                    el.innerHTML = items.sort((a, b) => a.nombre.localeCompare(b.nombre)).map(i => `<option value="${i.id}">${i.nombre}</option>`).join('');
+                }
+                populate('p-cat', cats);
+                populate('rel-p', prods);
+                populate('rel-m', marcas);
+
+                // Render Matrix & Catalog
+                renderProductCatalog(prods);
+                renderRelationalMatrix(prods);
+
+            } catch (e) {
+                console.error("Critical error in admin init:", e);
+            }
         }
 
-        function renderList(containerId, items, apiMethodName) {
+        function switchSection(id) {
+            document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.side-link').forEach(l => l.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            event.currentTarget.classList.add('active');
+        }
+
+        // --- Render Helpers ---
+
+        function renderCompactList(containerId, items, method) {
             const container = document.getElementById(containerId);
-            container.innerHTML = items.map(item => `
-                <div class="list-row">
-                    <span>${item.nombre}</span>
-                    <button class="btn-small" onclick="handleDelete(${item.id}, '${apiMethodName}')">
-                        <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+            container.innerHTML = items.sort((a, b) => a.nombre.localeCompare(b.nombre)).map(i => `
+                <div class="compact-row">
+                    <span style="font-weight:600; color:var(--text-main);">${i.nombre}</span>
+                    <button onclick="handleRemove(${i.id},'${method}')" style="background:transparent; color:#ef4444; width:auto; padding:0;">
+                         <i data-lucide="minus-circle" style="width: 16px;"></i>
                     </button>
                 </div>
             `).join('');
             lucide.createIcons();
         }
 
-        async function handleDelete(id, apiMethodName) {
-            if (!confirm("¿Seguro que quieres eliminar este elemento? Podría afectar a registros existentes.")) return;
-            try {
-                await ApiService[apiMethodName](id);
-                loadAll();
-            } catch (e) { alert("Error al eliminar: " + e.message); }
+        function renderProductCatalog(prods) {
+            const container = document.getElementById("catalog-list");
+            container.innerHTML = prods.map(p => `
+                <div class="card" style="padding: 1.25rem;">
+                    <div style="font-weight: 800; color: var(--primary); margin-bottom: 0.25rem;">${p.nombre}</div>
+                    <div style="font-size: 0.7rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">
+                        ${p.categoria.nombre} | ${p.unidades_permitidas || 'Cualquiera'}
+                    </div>
+                    <div style="margin-top: 1rem; border-top: 1px solid #f1f5f9; padding-top: 0.75rem; text-align: right;">
+                        <button onclick="handleRemove(${p.id},'deleteProducto')" style="background:transparent; color:#ef4444; width:auto; padding:0; font-size: 0.8rem;">
+                            Eliminar Maestro
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+            lucide.createIcons();
         }
 
-        async function addCategoria() {
-            const name = document.getElementById("new-cat").value;
+        function renderRelationalMatrix(prods) {
+            const container = document.getElementById("rel-matrix");
+            container.innerHTML = prods.map(p => `
+                <div class="mapping-row">
+                    <div class="mapping-product">${p.nombre}</div>
+                    <div class="mapping-brands">
+                        ${p.marcas.length > 0 ? p.marcas.map(m => `
+                            <div class="pill">
+                                ${m.nombre}
+                                <button onclick="unlink(${p.id}, ${m.id})">×</button>
+                            </div>
+                        `).join('') : '<div class="empty-indicator">Sin relaciones definidas</div>'}
+                    </div>
+                    <button class="btn-add-rel" onclick="prepLink(${p.id})" title="Añadir Marca">
+                        <i data-lucide="plus" style="width: 18px;"></i>
+                    </button>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        // --- Logic Actions ---
+
+        async function quickAdd(entity, inputId) {
+            const val = document.getElementById(inputId).value;
+            if (!val) return;
+            await ApiService[`create${entity}`](val);
+            document.getElementById(inputId).value = "";
+            init();
+        }
+
+        async function createMasterProduct() {
+            const name = document.getElementById("p-name").value;
+            const cat = document.getElementById("p-cat").value;
+            const units = document.getElementById("p-units").value;
             if (!name) return;
-            await ApiService.createCategoria(name);
-            document.getElementById("new-cat").value = "";
-            loadAll();
+            await ApiService.createProducto(name, cat, units);
+            document.getElementById("p-name").value = "";
+            document.getElementById("p-units").value = "";
+            init();
         }
 
-        async function addMarca() {
-            const name = document.getElementById("new-marca").value;
-            if (!name) return;
-            await ApiService.createMarca(name);
-            document.getElementById("new-marca").value = "";
-            loadAll();
+        async function establishLink() {
+            await ApiService.linkProductoMarca(document.getElementById("rel-p").value, document.getElementById("rel-m").value);
+            init();
         }
 
-        async function addSuper() {
-            const name = document.getElementById("new-super").value;
-            if (!name) return;
-            await ApiService.createSupermercado(name);
-            document.getElementById("new-super").value = "";
-            loadAll();
+        async function unlink(pId, mId) {
+            await ApiService.unlinkProductoMarca(pId, mId);
+            init();
         }
 
-        async function addProducto() {
-            const name = document.getElementById("new-prod-name").value;
-            const catId = document.getElementById("new-prod-cat").value;
-            if (!name || !catId) return;
-            await ApiService.createProducto(name, catId);
-            document.getElementById("new-prod-name").value = "";
-            loadAll();
+        async function handleRemove(id, method) {
+            if (!confirm("¿Estás seguro? Esta acción borrará el registro base.")) return;
+            await ApiService[method](id);
+            init();
         }
 
-        document.addEventListener("DOMContentLoaded", loadAll);
+        function filterCatalog() {
+            const q = document.getElementById('search-prod').value.toLowerCase();
+            const filtered = fullData.prods.filter(p =>
+                p.nombre.toLowerCase().includes(q) ||
+                p.categoria.nombre.toLowerCase().includes(q)
+            );
+            renderProductCatalog(filtered);
+        }
+
+        function prepLink(pId) {
+            document.getElementById('rel-p').value = pId;
+            switchSection('section-rels');
+            // Podríamos hacer scroll al selector de marca
+        }
+
+        document.addEventListener("DOMContentLoaded", init);
     </script>
 </body>
 
