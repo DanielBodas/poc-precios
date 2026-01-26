@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: poc-precios
+    env: python
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: bash start.sh
+    plan: free

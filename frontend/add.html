@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Añadir Precio — PriceTracker Pro</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="css/main.css">
+</head>
+
+<body>
+    <div class="container" style="max-width: 600px;">
+        <header>
+            <h1 class="page-title">Nuevo Registro</h1>
+            <p style="color: var(--text-muted); margin-bottom: 2rem;">Introduce los detalles del producto para mantener
+                tu historial actualizado.</p>
+        </header>
+
+        <main>
+            <section class="card">
+                <form id="price-form">
+                    <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div>
+                            <label for="producto_id">Producto (Tipo)</label>
+                            <select id="producto_id" class="custom-select" required>
+                                <option value="">Cargando catálogo...</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="marca_id">Marca / Fabricante</label>
+                            <select id="marca_id" class="custom-select" required>
+                                <option value="">Cargando marcas...</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div>
+                            <label for="cantidad">Cantidad / Peso</label>
+                            <input id="cantidad" type="number" step="0.001" placeholder="Ej: 1.5 o 500" required>
+                        </div>
+                        <div>
+                            <label for="unidad">Unidad de Medida</label>
+                            <select id="unidad" class="custom-select" required>
+                                <option value="kg">kilogramos (kg)</option>
+                                <option value="g">gramos (g)</option>
+                                <option value="L">Litros (L)</option>
+                                <option value="ml">mililitros (ml)</option>
+                                <option value="ud">unidades (ud)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="supermercado_id">Establecimiento</label>
+                        <select id="supermercado_id" class="custom-select" required>
+                            <option value="">Cargando supermercados...</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="precio_total">Precio Pagado Final (€)</label>
+                        <input id="precio_total" type="number" step="0.01" placeholder="0.00" required>
+                        <small style="color: var(--text-muted); display: block; margin-top: 0.25rem;">Introduce el
+                            precio real que pagaste en caja.</small>
+                    </div>
+
+                    <div class="form-group"
+                        style="background: rgba(99, 102, 241, 0.05); padding: 1rem; border-radius: 10px; border: 1px solid rgba(99, 102, 241, 0.1);">
+                        <label
+                            style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; color: var(--primary);">
+                            <input id="es_oferta" type="checkbox" style="width: auto;">
+                            <span>¿Es una oferta? (3x2, 2ª unidad, etc.)</span>
+                        </label>
+                        <div id="offer-details" style="display: none; margin-top: 1rem;">
+                            <label for="tipo_oferta">Describe la oferta</label>
+                            <input id="tipo_oferta" type="text" placeholder="Ej: 3x2 o Segunda al 70%">
+                        </div>
+                    </div>
+
+                    <button type="submit" id="btn-submit" style="margin-top: 1rem;">
+                        <i data-lucide="shield-check"></i>
+                        Registrar para Análisis
+                    </button>
+                </form>
+            </section>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/api.js"></script>
+    <script src="js/components.js"></script>
+    <script>
+        // Toggle detalles de oferta
+        document.getElementById("es_oferta").addEventListener("change", (e) => {
+            document.getElementById("offer-details").style.display = e.target.checked ? "block" : "none";
+        });
+
+        async function loadCatalog() {
+            try {
+                const [productos, supers, marcas] = await Promise.all([
+                    ApiService.getCatalogProductos(),
+                    ApiService.getCatalogSupermercados(),
+                    ApiService.getCatalogMarcas()
+                ]);
+
+                const prodSelect = document.getElementById("producto_id");
+                const superSelect = document.getElementById("supermercado_id");
+                const marcaSelect = document.getElementById("marca_id");
+
+                prodSelect.innerHTML = '<option value="">Tipo de producto...</option>' +
+                    productos.map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
+
+                superSelect.innerHTML = '<option value="">Establecimiento...</option>' +
+                    supers.map(s => `<option value="${s.id}">${s.nombre}</option>`).join('');
+
+                marcaSelect.innerHTML = '<option value="">Marca...</option>' +
+                    marcas.map(m => `<option value="${m.id}">${m.nombre}</option>`).join('');
+
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        document.getElementById("price-form").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById("btn-submit");
+            const data = {
+                producto_id: parseInt(document.getElementById("producto_id").value),
+                marca_id: parseInt(document.getElementById("marca_id").value),
+                supermercado_id: parseInt(document.getElementById("supermercado_id").value),
+                cantidad: parseFloat(document.getElementById("cantidad").value),
+                unidad: document.getElementById("unidad").value,
+                precio_total: parseFloat(document.getElementById("precio_total").value),
+                es_oferta: document.getElementById("es_oferta").checked,
+                tipo_oferta: document.getElementById("tipo_oferta").value || null
+            };
+
+            try {
+                btn.disabled = true;
+                btn.innerHTML = `<i data-lucide="loader-2" class="animate-spin"></i> Procesando...`;
+                lucide.createIcons();
+
+                await ApiService.createPrecio(data);
+                window.location.href = "index.html";
+            } catch (error) {
+                alert("Error al registrar: " + error.message);
+                btn.disabled = false;
+                btn.innerHTML = `<i data-lucide="shield-check"></i> Registrar para Análisis`;
+                lucide.createIcons();
+            }
+        });
+
+        document.addEventListener("DOMContentLoaded", loadCatalog);
+    </script>
+</body>
+
+</html>

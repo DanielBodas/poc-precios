@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualizar Precios — PriceTracker Pro</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="css/main.css">
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1 class="page-title">Historial de Precios</h1>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                <p style="color: var(--text-muted);">Consulta y compara todos los precios registrados hasta la fecha.
+                </p>
+                <span id="contador-precios" class="card"
+                    style="padding: 0.5rem 1rem; margin-bottom: 0; font-weight: 700; color: var(--primary);">0
+                    productos</span>
+            </div>
+        </header>
+
+        <main>
+            <div id="lista" class="price-grid">
+                <!-- Los items se cargarán dinámicamente -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/api.js"></script>
+    <script src="js/components.js"></script>
+    <script>
+        async function cargar() {
+            const lista = document.getElementById("lista");
+            const contador = document.getElementById("contador-precios");
+
+            // Skeleton loader
+            lista.innerHTML = Array(6).fill(0).map(() => `
+                <div class="price-item skeleton" style="height: 140px; opacity: 0.5;"></div>
+            `).join('');
+
+            try {
+                const datos = await ApiService.getPrecios();
+
+                lista.innerHTML = "";
+                contador.textContent = `${datos.length} productos`;
+
+                if (datos.length === 0) {
+                    lista.innerHTML = `
+                        <div class="empty-state">
+                            <i data-lucide="database" style="width: 48px; height: 48px; margin-bottom: 1rem; opacity: 0.5;"></i>
+                            <p>No hay datos disponibles. Comienza añadiendo algunos precios.</p>
+                            <a href="add.html" class="nav-link" style="display: inline-flex; margin-top: 1rem; background: var(--primary); color: white;">Añadir Primero</a>
+                        </div>
+                    `;
+                } else {
+                    datos.forEach((p, index) => {
+                        const div = document.createElement("div");
+                        div.className = "price-item";
+                        if (p.es_oferta) div.style.border = "1px solid var(--primary)";
+                        div.style.animationDelay = `${index * 0.05}s`;
+
+                        const unitLabel = p.unidad === 'ud' ? 'unidad' : p.unidad;
+
+                        div.innerHTML = `
+                            <div class="item-header">
+                                <span class="badge badge-info">${p.categoria}</span>
+                                ${p.es_oferta ? `<span class="badge" style="background: var(--primary); color: white;">OFERTA</span>` : ''}
+                            </div>
+                            <div style="flex-grow: 1;">
+                                <div class="producto">${p.producto}</div>
+                                <div class="unidad">${p.marca} — ${p.cantidad} ${p.unidad}</div>
+                            </div>
+                            
+                            <div style="background: rgba(99, 102, 241, 0.03); padding: 0.75rem; border-radius: 8px; margin: 0.5rem 0;">
+                                <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Precio Real x ${unitLabel}</div>
+                                <div style="font-size: 1.25rem; font-weight: 800; color: var(--primary);">
+                                    ${p.precio_unidad.toFixed(3)}€
+                                </div>
+                            </div>
+
+                            <div class="supermercado">
+                                <i data-lucide="store" style="width: 14px; height: 14px;"></i>
+                                ${p.supermercado}
+                            </div>
+                            
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem; pt: 0.5rem; border-top: 1px solid var(--glass-border);">
+                                <span style="font-size: 0.875rem; color: var(--text-muted);">Total pagado:</span>
+                                <span style="font-weight: 700;">${p.precio_total.toFixed(2)}€</span>
+                            </div>
+                            
+                            ${p.tipo_oferta ? `
+                                <div style="font-size: 0.7rem; color: var(--primary); font-weight: 600; font-style: italic; margin-top: 0.25rem;">
+                                    "${p.tipo_oferta}"
+                                </div>
+                            ` : ''}
+                        `;
+                        lista.appendChild(div);
+                    });
+                }
+                lucide.createIcons();
+            } catch (error) {
+                lista.innerHTML = `<div class="empty-state" style="color: #ef4444;">Error al conectar con la API</div>`;
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", cargar);
+    </script>
+</body>
+
+</html>
