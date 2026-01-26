@@ -21,8 +21,10 @@
             background: white;
             border-radius: var(--radius);
             margin-bottom: 1rem;
-            border: 1px solid var(--glass-border);
+            border: 1px solid rgba(0, 0, 0, 0.05);
             position: relative;
+            box-shadow: var(--shadow);
+            animation: slideUp 0.4s ease-out backwards;
         }
 
         .feed-date {
@@ -31,7 +33,7 @@
             display: flex;
             flex-direction: column;
             justify-content: center;
-            border-right: 1px solid var(--glass-border);
+            border-right: 1px solid rgba(0, 0, 0, 0.05);
             padding-right: 1.5rem;
         }
 
@@ -39,6 +41,7 @@
             font-size: 1.5rem;
             font-weight: 800;
             color: var(--primary);
+            line-height: 1;
         }
 
         .month {
@@ -52,16 +55,17 @@
             flex: 1;
         }
 
-        .price-badge {
+        .price-chip {
             background: rgba(99, 102, 241, 0.05);
             padding: 0.5rem 1rem;
-            border-radius: 10px;
+            border-radius: 12px;
             font-weight: 800;
             color: var(--primary);
             font-size: 1.25rem;
             display: inline-flex;
             align-items: baseline;
-            gap: 2px;
+            gap: 4px;
+            margin-top: 0.5rem;
         }
 
         .action-btns {
@@ -69,18 +73,34 @@
             top: 1rem;
             right: 1rem;
             display: flex;
-            gap: 0.5rem;
+            gap: 0.25rem;
+        }
+
+        .btn-action {
+            background: transparent;
+            color: var(--text-muted);
+            padding: 0.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+        }
+
+        .btn-action:hover {
+            color: var(--primary);
+            background: rgba(0, 0, 0, 0.03);
         }
 
         @media (max-width: 600px) {
             .feed-item {
                 flex-direction: column;
                 gap: 1rem;
+                padding: 1.25rem;
             }
 
             .feed-date {
                 border-right: none;
-                border-bottom: 1px solid var(--glass-border);
+                border-bottom: 1px solid rgba(0, 0, 0, 0.05);
                 padding: 0 0 1rem 0;
                 flex-direction: row;
                 gap: 0.5rem;
@@ -88,23 +108,25 @@
                 justify-content: flex-start;
             }
 
-            .day {
-                font-size: 1.2rem;
+            .day,
+            .month {
+                font-size: 1.1rem;
             }
 
-            .month {
-                font-size: 1.2rem;
+            .price-chip {
+                width: 100%;
+                justify-content: center;
             }
         }
     </style>
 </head>
 
 <body>
-    <div class="container">
+    <div class="container animate-in">
         <header>
-            <h1 class="page-title">Muro de Actividad</h1>
-            <p style="color: var(--text-muted); margin-bottom: 2rem;">Últimos precios registrados en tu red. Mantente al
-                día de las variaciones del mercado.</p>
+            <h1 class="page-title">Muro</h1>
+            <p style="color: var(--text-muted); margin-bottom: 2rem; font-size: 0.95rem;">Últimos precios registrados
+                cronológicamente.</p>
         </header>
 
         <main id="feed-container">
@@ -112,82 +134,66 @@
         </main>
     </div>
 
-    <!-- Scripts -->
     <script src="/config.js"></script>
     <script src="/js/api.js"></script>
     <script src="/js/components.js"></script>
     <script>
-        async function cargarFeed() {
+        async function loadFeed() {
             const container = document.getElementById("feed-container");
-
-            // Skeleton
-            container.innerHTML = Array(4).fill(0).map(() => `
-                <div class="card skeleton" style="height: 120px; margin-bottom: 1rem;"></div>
-            `).join('');
+            container.innerHTML = Array(3).fill(0).map(() => `<div class="card skeleton" style="height: 140px; margin-bottom: 1rem; opacity:0.5;"></div>`).join('');
 
             try {
-                const datos = await ApiService.getPrecios();
+                const data = await ApiService.getPrecios();
                 container.innerHTML = "";
 
-                if (datos.length === 0) {
-                    container.innerHTML = `
-                        <div class="empty-state">
-                            <i data-lucide="bell-off" style="width: 48px; height: 48px; margin-bottom: 1rem; opacity: 0.3;"></i>
-                            <p>No hay actividad reciente. Empieza a registrar tus compras.</p>
-                        </div>
-                    `;
+                if (data.length === 0) {
+                    container.innerHTML = `<div class="empty-state">No hay registros aún.</div>`;
                     return;
                 }
 
-                datos.forEach(p => {
+                data.forEach((p, idx) => {
                     const date = new Date(p.fecha);
-                    const day = date.getDate();
-                    const month = date.toLocaleDateString('es-ES', { month: 'short' });
-
                     const item = document.createElement("div");
                     item.className = "feed-item";
+                    item.style.animationDelay = `${idx * 0.1}s`;
                     item.innerHTML = `
                         <div class="feed-date">
-                            <span class="day">${day}</span>
-                            <span class="month">${month}</span>
+                            <span class="day">${date.getDate()}</span>
+                            <span class="month">${date.toLocaleDateString('es-ES', { month: 'short' })}</span>
                         </div>
                         <div class="feed-content">
-                            <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.25rem;">
+                            <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.5rem;">
                                 <span class="badge badge-info">${p.categoria}</span>
-                                ${p.es_oferta ? '<span class="badge" style="background:#fef3c7; color:#92400e; border: 1px solid #fde68a;">OFERTA</span>' : ''}
+                                ${p.es_oferta ? '<span class="badge" style="background:var(--warning); color:white;">OFERTA</span>' : ''}
                             </div>
-                            <h3 style="font-weight:800; font-size:1.1rem; color:var(--text-dark);">${p.producto}</h3>
-                            <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:0.75rem;">
+                            <h3 style="font-weight:800; font-size:1.15rem; color:var(--text-dark);">${p.producto}</h3>
+                            <p style="font-size:0.85rem; color:var(--text-muted); margin-top:0.25rem;">
                                 ${p.marca} en <strong>${p.supermercado}</strong> — ${p.cantidad}${p.unidad}
                             </p>
-                            <div class="price-badge" title="Precio x ${p.unidad}">
-                                ${p.precio_unidad.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 3 })}<span style="font-size:0.8rem;">€ / ${p.unidad}</span>
+                            <div class="price-chip">
+                                ${p.precio_unidad.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 3 })}€<span style="font-size:0.75rem; color:var(--text-muted);">/ ${p.unidad}</span>
                             </div>
                         </div>
                         <div class="action-btns">
-                            <button onclick="location.href='add.html?id=${p.id}'" style="background:rgba(99,102,241,0.1); border:none; color:var(--primary); padding:0.5rem; border-radius:8px; cursor:pointer;">
-                                <i data-lucide="edit-3" style="width:16px; height:16px;"></i>
-                            </button>
-                            <button onclick="eliminar(${p.id})" style="background:rgba(239,68,68,0.1); border:none; color:#ef4444; padding:0.5rem; border-radius:8px; cursor:pointer;">
-                                <i data-lucide="trash-2" style="width:16px; height:16px;"></i>
-                            </button>
+                            <button class="btn-action" onclick="location.href='add.html?id=${p.id}'"><i data-lucide="edit-3" style="width:18px;"></i></button>
+                            <button class="btn-action" onclick="del(${p.id})"><i data-lucide="trash-2" style="width:18px; color:var(--danger);"></i></button>
                         </div>
                     `;
                     container.appendChild(item);
                 });
                 lucide.createIcons();
             } catch (error) {
-                container.innerHTML = `<div class="empty-state" style="color:#ef4444;">Error de conexión</div>`;
+                container.innerHTML = `<div class="empty-state" style="color:var(--danger);">Error cargando datos.</div>`;
             }
         }
 
-        async function eliminar(id) {
-            if (!confirm("¿Borrar este registro?")) return;
+        async function del(id) {
+            if (!confirm("¿Borrar?")) return;
             await ApiService.deletePrecio(id);
-            cargarFeed();
+            loadFeed();
         }
 
-        document.addEventListener("DOMContentLoaded", cargarFeed);
+        document.addEventListener("DOMContentLoaded", loadFeed);
     </script>
 </body>
 

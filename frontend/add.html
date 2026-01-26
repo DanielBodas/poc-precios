@@ -16,77 +16,66 @@
 </head>
 
 <body>
-    <div class="container" style="max-width: 600px;">
+    <div class="container animate-in" style="max-width: 600px;">
         <header>
-            <h1 id="form-title" class="page-title">Nuevo Registro</h1>
-            <p id="form-desc" style="color: var(--text-muted); margin-bottom: 2rem;">Los datos se auto-filtrarán según
-                el producto seleccionado.</p>
+            <h1 id="title" class="page-title">Nuevo</h1>
         </header>
 
         <main>
-            <section class="card">
-                <form id="price-form">
+            <form id="p-form" class="card">
+                <div class="form-group">
+                    <label>Producto Maestro</label>
+                    <select id="p-id" required>
+                        <option value="">Selecciona...</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Marca / Fabricante</label>
+                    <select id="m-id" required>
+                        <option value="">Elige producto primero...</option>
+                    </select>
+                </div>
+
+                <div class="grid-2">
                     <div class="form-group">
-                        <label for="producto_id">Producto</label>
-                        <select id="producto_id" class="custom-select" required>
-                            <option value="">Selecciona producto...</option>
-                        </select>
+                        <label>Cantidad</label>
+                        <input id="q" type="number" step="0.001" placeholder="Ej: 1.5" required>
                     </div>
-
                     <div class="form-group">
-                        <label for="marca_id">Marca</label>
-                        <select id="marca_id" class="custom-select" required>
-                            <option value="">Elige producto primero...</option>
-                        </select>
+                        <label>Unidad</label>
+                        <select id="u" required></select>
                     </div>
+                </div>
 
-                    <div class="form-group grid-2">
-                        <div>
-                            <label for="cantidad">Cantidad / Peso</label>
-                            <input id="cantidad" type="number" step="0.001" placeholder="Ej: 1.5" required>
-                        </div>
-                        <div>
-                            <label for="unidad">Unidad</label>
-                            <select id="unidad" class="custom-select" required>
-                                <option value="">Selecciona...</option>
-                            </select>
-                        </div>
-                    </div>
+                <div class="form-group">
+                    <label>Establecimiento</label>
+                    <select id="s-id" required></select>
+                </div>
 
-                    <div class="form-group">
-                        <label for="supermercado_id">Establecimiento</label>
-                        <select id="supermercado_id" class="custom-select" required>
-                            <option value="">Selecciona súper...</option>
-                        </select>
-                    </div>
+                <div class="form-group">
+                    <label>Precio Pagado (€)</label>
+                    <input id="t-price" type="number" step="0.01" placeholder="0.00" required>
+                </div>
 
-                    <div class="form-group">
-                        <label for="precio_total">Precio Total Pagado (€)</label>
-                        <input id="precio_total" type="number" step="0.01" placeholder="0.00" required>
-                    </div>
+                <div class="form-group"
+                    style="background:#f8fafc; padding:1rem; border-radius:12px; display:flex; align-items:center; gap:0.75rem;">
+                    <input type="checkbox" id="is-off" style="width:20px; height:20px;">
+                    <label for="is-off" style="margin:0;">¿Está de Oferta?</label>
+                </div>
 
-                    <div class="form-group"
-                        style="display: flex; align-items: center; gap: 0.75rem; background: rgba(99, 102, 241, 0.05); padding: 1rem; border-radius: 12px; border: 1px solid rgba(99, 102, 241, 0.1);">
-                        <input type="checkbox" id="es_oferta" style="width: 20px; height: 20px; margin: 0;">
-                        <label for="es_oferta"
-                            style="margin: 0; cursor: pointer; color: var(--primary); font-weight:700;">¿Es una
-                            Oferta?</label>
-                    </div>
+                <div id="off-box" class="form-group" style="display:none; margin-top:1rem;">
+                    <label>Detalle (ej: 3x2)</label>
+                    <input id="off-detail" type="text">
+                </div>
 
-                    <div id="oferta-extra" class="form-group" style="display: none; margin-top: 1rem;">
-                        <label for="tipo_oferta">Detalle de la oferta</label>
-                        <input id="tipo_oferta" type="text" placeholder="Ej: 2ª unidad al 50%">
-                    </div>
-
-                    <button type="submit" id="btn-submit" style="margin-top: 1.5rem;">
-                        <i data-lucide="shield-check"></i>
-                        <span id="btn-text">Guardar Registro</span>
-                    </button>
-
-                    <a href="index.html"
-                        style="display: block; text-align: center; margin-top: 1.5rem; text-decoration: none; color: var(--text-muted); font-weight: 600;">Regresar</a>
-                </form>
-            </section>
+                <button type="submit" id="btn-save" style="margin-top:1.5rem;">
+                    <i data-lucide="check-circle"></i>
+                    <span>Guardar Registro</span>
+                </button>
+                <a href="index.html"
+                    style="display:block; text-align:center; padding-top:1.5rem; color:var(--text-muted); text-decoration:none; font-weight:600; font-size:0.9rem;">Cancelar</a>
+            </form>
         </main>
     </div>
 
@@ -94,118 +83,79 @@
     <script src="/js/api.js"></script>
     <script src="/js/components.js"></script>
     <script>
-        let allProducts = [];
         let editId = new URLSearchParams(window.location.search).get('id');
+        let products = [];
+        const UNITS = ['kg', 'g', 'L', 'ml', 'ud'];
 
-        const UNIDADES_DEFAULT = [
-            { v: 'kg', n: 'kg' }, { v: 'g', n: 'gramos (g)' },
-            { v: 'L', n: 'Litros (L)' }, { v: 'ml', n: 'ml' },
-            { v: 'ud', n: 'unidades (ud)' }
-        ];
-
-        async function initForm() {
+        async function init() {
             try {
-                const [productos, supers] = await Promise.all([
-                    ApiService.getCatalogProductos(),
-                    ApiService.getCatalogSupermercados()
-                ]);
+                const [prods, supers] = await Promise.all([ApiService.getCatalogProductos(), ApiService.getCatalogSupermercados()]);
+                products = prods;
 
-                allProducts = productos;
+                const pSel = document.getElementById("p-id");
+                pSel.innerHTML = '<option value="">Selecciona...</option>' + prods.sort((a, b) => a.nombre.localeCompare(b.nombre)).map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
 
-                const prodSelect = document.getElementById("producto_id");
-                const superSelect = document.getElementById("supermercado_id");
+                const sSel = document.getElementById("s-id");
+                sSel.innerHTML = supers.sort((a, b) => a.nombre.localeCompare(b.nombre)).map(s => `<option value="${s.id}">${s.nombre}</option>`).join('');
 
-                prodSelect.innerHTML = '<option value="">Selecciona producto...</option>' +
-                    productos.sort((a, b) => a.nombre.localeCompare(b.nombre)).map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
-
-                superSelect.innerHTML = '<option value="">Selecciona súper...</option>' +
-                    supers.sort((a, b) => a.nombre.localeCompare(b.nombre)).map(s => `<option value="${s.id}">${s.nombre}</option>`).join('');
-
-                prodSelect.addEventListener('change', syncSelectors);
+                pSel.onchange = sync;
+                document.getElementById("is-off").onchange = (e) => document.getElementById("off-box").style.display = e.target.checked ? 'block' : 'none';
 
                 if (editId) {
-                    document.getElementById('form-title').textContent = "Editar Registro";
-                    document.getElementById('btn-text').textContent = "Actualizar Registro";
-                    await loadEditData();
+                    document.getElementById("title").textContent = "Editar";
+                    await load();
                 }
-
-            } catch (error) { console.error(error); }
+            } catch (e) { console.error(e); }
         }
 
-        function syncSelectors() {
-            const pId = document.getElementById("producto_id").value;
-            const marcaSelect = document.getElementById("marca_id");
-            const unidadSelect = document.getElementById("unidad");
+        function sync() {
+            const p = products.find(x => x.id == document.getElementById("p-id").value);
+            const mSel = document.getElementById("m-id");
+            const uSel = document.getElementById("u");
 
-            if (!pId) {
-                marcaSelect.innerHTML = '<option value="">Elige producto primero...</option>';
-                unidadSelect.innerHTML = '<option value="">Selecciona...</option>';
-                return;
-            }
+            if (!p) return;
 
-            const product = allProducts.find(p => p.id == pId);
-
-            // 1. Marcas
-            if (product.marcas.length > 0) {
-                marcaSelect.innerHTML = '<option value="">Selecciona marca...</option>' +
-                    product.marcas.map(m => `<option value="${m.id}">${m.nombre}</option>`).join('');
-            } else {
-                marcaSelect.innerHTML = '<option value="">Sin marcas vinculadas</option>';
-            }
-
-            // 2. Unidades
-            if (product.unidades_permitidas) {
-                const allowed = product.unidades_permitidas.split(',').map(u => u.trim());
-                unidadSelect.innerHTML = allowed.map(u => `<option value="${u}">${u}</option>`).join('');
-            } else {
-                unidadSelect.innerHTML = UNIDADES_DEFAULT.map(u => `<option value="${u.v}">${u.n}</option>`).join('');
-            }
+            mSel.innerHTML = p.marcas.map(m => `<option value="${m.id}">${m.nombre}</option>`).join('') || '<option value="">Sin marcas vinculadas</option>';
+            const allowed = p.unidades_permitidas ? p.unidades_permitidas.split(',').map(x => x.trim()) : UNITS;
+            uSel.innerHTML = allowed.map(u => `<option value="${u}">${u}</option>`).join('');
         }
 
-        async function loadEditData() {
-            const data = await ApiService.getPrecio(editId);
-            document.getElementById("producto_id").value = data.producto_id;
-            syncSelectors();
-            document.getElementById("marca_id").value = data.marca_id;
-            document.getElementById("supermercado_id").value = data.supermercado_id;
-            document.getElementById("cantidad").value = data.cantidad;
-            document.getElementById("unidad").value = data.unidad;
-            document.getElementById("precio_total").value = data.precio_total;
-            document.getElementById("es_oferta").checked = data.es_oferta;
-            document.getElementById("tipo_oferta").value = data.tipo_oferta || "";
-            if (data.es_oferta) document.getElementById("oferta-extra").style.display = "block";
+        async function load() {
+            const d = await ApiService.getPrecio(editId);
+            document.getElementById("p-id").value = d.producto_id;
+            sync();
+            document.getElementById("m-id").value = d.marca_id;
+            document.getElementById("q").value = d.cantidad;
+            document.getElementById("u").value = d.unidad;
+            document.getElementById("s-id").value = d.supermercado_id;
+            document.getElementById("t-price").value = d.precio_total;
+            document.getElementById("is-off").checked = d.es_oferta;
+            if (d.es_oferta) document.getElementById("off-box").style.display = 'block';
+            document.getElementById("off-detail").value = d.tipo_oferta || "";
         }
 
-        document.getElementById("es_oferta").addEventListener('change', (e) => {
-            document.getElementById("oferta-extra").style.display = e.target.checked ? "block" : "none";
-        });
-
-        document.getElementById("price-form").addEventListener("submit", async (e) => {
+        document.getElementById("p-form").onsubmit = async (e) => {
             e.preventDefault();
-            const btn = document.getElementById("btn-submit");
+            const btn = document.getElementById("btn-save");
+            btn.disabled = true;
             const payload = {
-                producto_id: parseInt(document.getElementById("producto_id").value),
-                marca_id: parseInt(document.getElementById("marca_id").value),
-                supermercado_id: parseInt(document.getElementById("supermercado_id").value),
-                cantidad: parseFloat(document.getElementById("cantidad").value),
-                unidad: document.getElementById("unidad").value,
-                precio_total: parseFloat(document.getElementById("precio_total").value),
-                es_oferta: document.getElementById("es_oferta").checked,
-                tipo_oferta: document.getElementById("tipo_oferta").value || null
+                producto_id: parseInt(document.getElementById("p-id").value),
+                marca_id: parseInt(document.getElementById("m-id").value),
+                supermercado_id: parseInt(document.getElementById("s-id").value),
+                cantidad: parseFloat(document.getElementById("q").value),
+                unidad: document.getElementById("u").value,
+                precio_total: parseFloat(document.getElementById("t-price").value),
+                es_oferta: document.getElementById("is-off").checked,
+                tipo_oferta: document.getElementById("off-detail").value || null
             };
-
             try {
-                btn.disabled = true;
                 if (editId) await ApiService.updatePrecio(editId, payload);
                 else await ApiService.createPrecio(payload);
                 window.location.href = "index.html";
-            } catch (error) {
-                alert("Error: " + error.message);
-                btn.disabled = false;
-            }
-        });
+            } catch (e) { alert(e); btn.disabled = false; }
+        };
 
-        document.addEventListener("DOMContentLoaded", initForm);
+        document.addEventListener("DOMContentLoaded", init);
     </script>
 </body>
 

@@ -13,465 +13,137 @@
 
     <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="/css/main.css">
+</head>
+
+<body>
+    <div class="container animate-in">
+        <header style="margin-bottom: 2rem;">
+            <h1 class="page-title">Sistema</h1>
+            <!-- Admin Internal Tabs - Mobile Friendly -->
+            <div
+                style="background: rgba(0,0,0,0.03); padding: 0.5rem; border-radius: 16px; display: flex; gap: 0.5rem;">
+                <button class="admin-tab-btn active" onclick="switchSection('sec-db')">Infra</button>
+                <button class="admin-tab-btn" onclick="switchSection('sec-prods')">Catálogo</button>
+                <button class="admin-tab-btn" onclick="switchSection('sec-map')">Mapeo</button>
+            </div>
+        </header>
+
+        <main>
+            <!-- SECCIÓN 1: INFRAESTRUCTURA -->
+            <section id="sec-db" class="admin-section active">
+                <div class="grid-2">
+                    <div class="card">
+                        <label>Añadir Categoría</label>
+                        <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+                            <input id="in-cat" type="text" placeholder="Ej: Bebidas">
+                            <button onclick="quickAdd('Categoria','in-cat')"
+                                style="width: auto; padding: 0 1rem;">+</button>
+                        </div>
+                        <div id="list-cats" style="margin-top: 1rem; max-height: 200px; overflow-y: auto;"></div>
+                    </div>
+
+                    <div class="card">
+                        <label>Añadir Marca</label>
+                        <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+                            <input id="in-marca" type="text" placeholder="Ej: Nestlé">
+                            <button onclick="quickAdd('Marca','in-marca')"
+                                style="width: auto; padding: 0 1rem;">+</button>
+                        </div>
+                        <div id="list-marcas" style="margin-top: 1rem; max-height: 200px; overflow-y: auto;"></div>
+                    </div>
+
+                    <div class="card">
+                        <label>Nuevo Supermercado</label>
+                        <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+                            <input id="in-super" type="text" placeholder="Ej: Aldi">
+                            <button onclick="quickAdd('Supermercado','in-super')"
+                                style="width: auto; padding: 0 1rem;">+</button>
+                        </div>
+                        <div id="list-supers" style="margin-top: 1rem; max-height: 200px; overflow-y: auto;"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECCIÓN 2: CATÁLOGO PRODUCTORES -->
+            <section id="sec-prods" class="admin-section" style="display: none;">
+                <div class="card" style="margin-bottom: 2rem;">
+                    <label>Crear Producto Maestro</label>
+                    <div style="display: flex; flex-direction: column; gap: 1rem; margin-top: 0.5rem;">
+                        <input id="p-name" type="text" placeholder="Nombre (ej: Yogur Griego)">
+                        <div class="grid-2">
+                            <select id="p-cat"></select>
+                            <input id="p-units" type="text" placeholder="kg,g o ud">
+                        </div>
+                        <button onclick="createMasterProduct()">Añadir al Catálogo</button>
+                    </div>
+                </div>
+
+                <input type="text" id="p-search" placeholder="🔍 Buscar productos..." onkeyup="filterP()"
+                    style="margin-bottom: 1rem;">
+                <div id="catalog-list" class="grid-2"></div>
+            </section>
+
+            <!-- SECCIÓN 3: MAPEO INTELIGENTE -->
+            <section id="sec-map" class="admin-section" style="display: none;">
+                <div class="card" style="margin-bottom: 2rem; border-color: var(--primary);">
+                    <label>Vincular Marca a Producto</label>
+                    <div style="display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem;">
+                        <select id="rel-p"></select>
+                        <select id="rel-m"></select>
+                        <button onclick="linkPM()">Establecer Relación</button>
+                    </div>
+                </div>
+
+                <div id="rel-viewer" style="display: flex; flex-direction: column; gap: 0.75rem;"></div>
+            </section>
+        </main>
+    </div>
+
     <style>
-        :root {
-            --sidebar-width: 240px;
-        }
-
-        body {
-            padding-top: 0;
-            display: flex;
-            background: #f1f5f9;
-        }
-
-        /* Layout Admin */
-        .admin-layout {
-            display: flex;
-            width: 100%;
-            min-height: 100vh;
-        }
-
-        /* Sidebar */
-        .admin-sidebar {
-            width: var(--sidebar-width);
-            background: white;
-            border-right: 1px solid var(--glass-border);
-            position: fixed;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            padding: 1.5rem;
-            z-index: 1001;
-        }
-
-        .sidebar-brand {
-            margin-bottom: 2.5rem;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-weight: 800;
-            color: var(--primary);
-            text-decoration: none;
-        }
-
-        .sidebar-nav {
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-            flex-grow: 1;
-        }
-
-        .side-link {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 0.8rem 1rem;
-            text-decoration: none;
-            color: var(--text-muted);
-            font-weight: 600;
-            border-radius: 12px;
-            transition: all 0.2s;
-            border: none;
-            background: transparent;
-            width: 100%;
-            cursor: pointer;
-            text-align: left;
-        }
-
-        .side-link:hover {
-            background: rgba(99, 102, 241, 0.05);
-            color: var(--primary);
-        }
-
-        .side-link.active {
-            background: var(--primary);
-            color: white;
-            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
-        }
-
-        /* Main Content Area */
-        .admin-main {
-            flex-grow: 1;
-            margin-left: var(--sidebar-width);
-            padding: 2.5rem;
-            max-width: calc(100vw - var(--sidebar-width));
-        }
-
-        /* Content Sections */
         .admin-section {
-            display: none;
-            animation: fadeIn 0.4s ease-out;
+            animation: fadeIn 0.3s ease-out;
         }
 
-        .admin-section.active {
-            display: block;
+        .row-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem;
+            background: #fff;
+            border-radius: 12px;
+            margin-bottom: 0.5rem;
+            border: 1px solid rgba(0, 0, 0, 0.03);
+            font-size: 0.9rem;
+        }
+
+        .pill {
+            background: rgba(99, 102, 241, 0.08);
+            color: var(--primary);
+            padding: 0.25rem 0.6rem;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 4px;
         }
 
         @keyframes fadeIn {
             from {
                 opacity: 0;
-                transform: translateY(10px);
             }
 
             to {
                 opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        /* Lists & Tables */
-        .data-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 2rem;
-        }
-
-        .search-box {
-            position: relative;
-            max-width: 400px;
-            width: 100%;
-        }
-
-        .search-box i {
-            position: absolute;
-            left: 1rem;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--text-muted);
-            width: 18px;
-        }
-
-        .search-box input {
-            padding-left: 3rem;
-        }
-
-        .management-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 1.5rem;
-        }
-
-        .entity-card {
-            background: white;
-            border-radius: 16px;
-            border: 1px solid var(--glass-border);
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .card-header {
-            padding: 1.25rem;
-            background: rgba(0, 0, 0, 0.02);
-            border-bottom: 1px solid var(--glass-border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .card-body {
-            padding: 1.25rem;
-            flex-grow: 1;
-        }
-
-        .list-scroll {
-            max-height: 300px;
-            overflow-y: auto;
-            margin-top: 1rem;
-        }
-
-        /* Relationship Mapping Visualizer */
-        .mapper-container {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
-
-        .mapping-row {
-            display: flex;
-            align-items: center;
-            gap: 1.5rem;
-            background: white;
-            padding: 1rem 1.5rem;
-            border-radius: 12px;
-            border: 1px solid var(--glass-border);
-        }
-
-        .mapping-product {
-            flex: 0 0 250px;
-            font-weight: 800;
-            color: var(--text-dark);
-        }
-
-        .mapping-brands {
-            flex-grow: 1;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-        }
-
-        .btn-add-rel {
-            padding: 0.5rem;
-            background: rgba(99, 102, 241, 0.1);
-            color: var(--primary);
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.2s;
-            border: none;
-        }
-
-        .btn-add-rel:hover {
-            background: var(--primary);
-            color: white;
-        }
-
-        .empty-indicator {
-            padding: 1rem;
-            background: #f8fafc;
-            border-radius: 12px;
-            border: 2px dashed #e2e8f0;
-            text-align: center;
-            color: #94a3b8;
-            font-size: 0.85rem;
-        }
-
-        /* Responsive Mobile Sidebar */
-        @media (max-width: 768px) {
-            .admin-sidebar {
-                width: 70px;
-                padding: 1rem 0.5rem;
-            }
-
-            .sidebar-brand span,
-            .side-link span {
-                display: none;
-            }
-
-            .sidebar-brand {
-                justify-content: center;
-            }
-
-            .side-link {
-                justify-content: center;
-                padding: 1rem;
-            }
-
-            .admin-main {
-                margin-left: 70px;
-                padding: 1.5rem;
-                max-width: calc(100vw - 70px);
-            }
-
-            .mapping-row {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 0.75rem;
-            }
-
-            .mapping-product {
-                flex-basis: auto;
             }
         }
     </style>
-</head>
-
-<body>
-    <div class="admin-layout">
-        <aside class="admin-sidebar">
-            <a href="index.html" class="sidebar-brand">
-                <i data-lucide="shield-check"></i>
-                <span>PriceTracker Pro</span>
-            </a>
-            <nav class="sidebar-nav">
-                <button class="side-link active" onclick="switchSection('section-entities')">
-                    <i data-lucide="database"></i>
-                    <span>Base de Datos</span>
-                </button>
-                <button class="side-link" onclick="switchSection('section-catalog')">
-                    <i data-lucide="package"></i>
-                    <span>Mi Catálogo</span>
-                </button>
-                <button class="side-link" onclick="switchSection('section-rels')">
-                    <i data-lucide="git-merge"></i>
-                    <span>Inteligencia</span>
-                </button>
-                <div style="margin-top: auto; border-top: 1px solid #f1f5f9; padding-top: 1rem;">
-                    <a href="index.html" class="side-link">
-                        <i data-lucide="arrow-left"></i>
-                        <span>Ir al Muro</span>
-                    </a>
-                </div>
-            </nav>
-        </aside>
-
-        <main class="admin-main">
-            <!-- SECCIÓN 1: ENTIDADES BASE -->
-            <section id="section-entities" class="admin-section active">
-                <div class="data-header">
-                    <div>
-                        <h2 class="page-title" style="margin-bottom: 0.5rem;">Base de Datos</h2>
-                        <p style="color: var(--text-muted);">Gestiona categorías, fabricantes y establecimientos
-                            pilares.</p>
-                    </div>
-                </div>
-
-                <div class="management-grid">
-                    <!-- Categorías -->
-                    <div class="entity-card">
-                        <div class="card-header">
-                            <span style="font-weight: 800; display: flex; align-items: center; gap: 8px;">
-                                <i data-lucide="tag" style="width: 18px; color: #f59e0b;"></i> Categorías
-                            </span>
-                            <span id="count-cats"
-                                style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700;">0 ítems</span>
-                        </div>
-                        <div class="card-body">
-                            <div style="display: flex; gap: 8px;">
-                                <input id="in-cat" type="text" placeholder="Añadir..." style="height: 42px;">
-                                <button onclick="quickAdd('Categoria','in-cat')"
-                                    style="width: 42px; padding: 0;">+</button>
-                            </div>
-                            <div id="list-cats" class="list-scroll"></div>
-                        </div>
-                    </div>
-
-                    <!-- Marcas -->
-                    <div class="entity-card">
-                        <div class="card-header">
-                            <span style="font-weight: 800; display: flex; align-items: center; gap: 8px;">
-                                <i data-lucide="award" style="width: 18px; color: #6366f1;"></i> Fabricantes / Marcas
-                            </span>
-                            <span id="count-marcas"
-                                style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700;">0 ítems</span>
-                        </div>
-                        <div class="card-body">
-                            <div style="display: flex; gap: 8px;">
-                                <input id="in-marca" type="text" placeholder="Añadir..." style="height: 42px;">
-                                <button onclick="quickAdd('Marca','in-marca')"
-                                    style="width: 42px; padding: 0;">+</button>
-                            </div>
-                            <div id="list-marcas" class="list-scroll"></div>
-                        </div>
-                    </div>
-
-                    <!-- Supermercados -->
-                    <div class="entity-card">
-                        <div class="card-header">
-                            <span style="font-weight: 800; display: flex; align-items: center; gap: 8px;">
-                                <i data-lucide="store" style="width: 18px; color: #10b981;"></i> Establecimientos
-                            </span>
-                            <span id="count-supers"
-                                style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700;">0 ítems</span>
-                        </div>
-                        <div class="card-body">
-                            <div style="display: flex; gap: 8px;">
-                                <input id="in-super" type="text" placeholder="Añadir..." style="height: 42px;">
-                                <button onclick="quickAdd('Supermercado','in-super')"
-                                    style="width: 42px; padding: 0;">+</button>
-                            </div>
-                            <div id="list-supers" class="list-scroll"></div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- SECCIÓN 2: CATÁLOGO DE PRODUCTOS -->
-            <section id="section-catalog" class="admin-section">
-                <div class="data-header">
-                    <div>
-                        <h2 class="page-title" style="margin-bottom: 0.5rem;">Mi Catálogo</h2>
-                        <p style="color: var(--text-muted);">Productos maestros que registras habitualmente.</p>
-                    </div>
-                </div>
-
-                <div style="display: grid; grid-template-columns: 350px 1fr; gap: 2rem; align-items: start;">
-                    <!-- Formulario lateral -->
-                    <div class="card" style="position: sticky; top: 2.5rem;">
-                        <h3 style="margin-bottom: 1.5rem; font-weight: 800;">Nuevo Maestro</h3>
-                        <div style="display: flex; flex-direction: column; gap: 1.25rem;">
-                            <div class="form-group" style="margin-bottom: 0;">
-                                <label>Nombre Comercial</label>
-                                <input id="p-name" type="text" placeholder="Ej: Café Molido Natural">
-                            </div>
-                            <div class="form-group" style="margin-bottom: 0;">
-                                <label>Categoría</label>
-                                <select id="p-cat" class="custom-select"></select>
-                            </div>
-                            <div class="form-group" style="margin-bottom: 0;">
-                                <label>Unidades Sugeridas</label>
-                                <input id="p-units" type="text" placeholder="kg,g o ud">
-                            </div>
-                            <button onclick="createMasterProduct()" style="margin-top: 0.5rem;">
-                                <i data-lucide="save" style="width: 18px;"></i>
-                                Guardar en Catálogo
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Lista con buscador -->
-                    <div style="display: flex; flex-direction: column; gap: 1rem;">
-                        <div class="search-box">
-                            <i data-lucide="search"></i>
-                            <input type="text" id="search-prod" placeholder="Filtrar por nombre o categoría..."
-                                onkeyup="filterCatalog()">
-                        </div>
-                        <div id="catalog-list"
-                            style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem;">
-                            <!-- Items dinámicos -->
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- SECCIÓN 3: INTELIGENCIA RELACIONAL -->
-            <section id="section-rels" class="admin-section">
-                <div class="data-header">
-                    <div>
-                        <h2 class="page-title" style="margin-bottom: 0.5rem;">Inteligencia Relacional</h2>
-                        <p style="color: var(--text-muted);">Configura qué marcas pertenecen a qué producto para
-                            acelerar tus registros.</p>
-                    </div>
-                </div>
-
-                <div class="card"
-                    style="margin-bottom: 2rem; padding: 1.5rem; background: var(--primary); color: white;">
-                    <div style="display: flex; align-items: center; gap: 2rem; flex-wrap: wrap;">
-                        <div style="flex-grow: 1;">
-                            <label
-                                style="color:rgba(255,255,255,0.8); font-size: 0.75rem; text-transform: uppercase;">Producto
-                                Maestro</label>
-                            <select id="rel-p" class="custom-select"
-                                style="background: rgba(255,255,255,0.1); color: white; border-color: rgba(255,255,255,0.2);"></select>
-                        </div>
-                        <div style="flex-grow: 1;">
-                            <label
-                                style="color:rgba(255,255,255,0.8); font-size: 0.75rem; text-transform: uppercase;">Añadir
-                                Fabricante / Marca</label>
-                            <select id="rel-m" class="custom-select"
-                                style="background: rgba(255,255,255,0.1); color: white; border-color: rgba(255,255,255,0.2);"></select>
-                        </div>
-                        <button onclick="establishLink()"
-                            style="background: white; color: var(--primary); width: auto; padding: 0 2rem; align-self: flex-end; height: 48px;">
-                            Vincular Ahora
-                        </button>
-                    </div>
-                </div>
-
-                <div id="rel-matrix" class="mapper-container">
-                    <!-- Filas de relaciones dinámicas -->
-                </div>
-            </section>
-        </main>
-    </div>
-
-    <!-- Modales o Notificaciones flotantes si hicieran falta -->
 
     <script src="/config.js"></script>
     <script src="/js/api.js"></script>
     <script src="/js/components.js"></script>
     <script>
-        let fullData = { cats: [], marcas: [], supers: [], prods: [] };
+        let allProds = [];
 
         async function init() {
             try {
@@ -482,119 +154,85 @@
                     ApiService.getCatalogProductos()
                 ]);
 
-                fullData = { cats, marcas, supers, prods };
+                allProds = prods;
 
-                // Dashboard counts
-                document.getElementById('count-cats').textContent = `${cats.length} ítems`;
-                document.getElementById('count-marcas').textContent = `${marcas.length} ítems`;
-                document.getElementById('count-supers').textContent = `${supers.length} ítems`;
+                renderList("list-cats", cats, 'deleteCategoria');
+                renderList("list-marcas", marcas, 'deleteMarca');
+                renderList("list-supers", supers, 'deleteSupermercado');
+                renderCatalog(prods);
+                renderMap(prods);
 
-                // Render Base Entities
-                renderCompactList("list-cats", cats, 'deleteCategoria');
-                renderCompactList("list-marcas", marcas, 'deleteMarca');
-                renderCompactList("list-supers", supers, 'deleteSupermercado');
-
-                // Fill Selects
-                const populate = (id, items) => {
+                const pop = (id, items) => {
                     const el = document.getElementById(id);
                     el.innerHTML = items.sort((a, b) => a.nombre.localeCompare(b.nombre)).map(i => `<option value="${i.id}">${i.nombre}</option>`).join('');
-                }
-                populate('p-cat', cats);
-                populate('rel-p', prods);
-                populate('rel-m', marcas);
-
-                // Render Matrix & Catalog
-                renderProductCatalog(prods);
-                renderRelationalMatrix(prods);
-
-            } catch (e) {
-                console.error("Critical error in admin init:", e);
-            }
+                };
+                pop('p-cat', cats);
+                pop('rel-p', prods);
+                pop('rel-m', marcas);
+            } catch (e) { console.error(e); }
         }
 
         function switchSection(id) {
-            document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
-            document.querySelectorAll('.side-link').forEach(l => l.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-            event.currentTarget.classList.add('active');
+            document.querySelectorAll('.admin-section').forEach(s => s.style.display = 'none');
+            document.querySelectorAll('.admin-tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(id).style.display = 'block';
+            event.target.classList.add('active');
         }
 
-        // --- Render Helpers ---
-
-        function renderCompactList(containerId, items, method) {
-            const container = document.getElementById(containerId);
-            container.innerHTML = items.sort((a, b) => a.nombre.localeCompare(b.nombre)).map(i => `
-                <div class="compact-row">
-                    <span style="font-weight:600; color:var(--text-main);">${i.nombre}</span>
-                    <button onclick="handleRemove(${i.id},'${method}')" style="background:transparent; color:#ef4444; width:auto; padding:0;">
-                         <i data-lucide="minus-circle" style="width: 16px;"></i>
-                    </button>
+        function renderList(id, items, method) {
+            const container = document.getElementById(id);
+            container.innerHTML = items.map(i => `
+                <div class="row-item">
+                    <span>${i.nombre}</span>
+                    <button onclick="handleDel(${i.id},'${method}')" style="background:transparent; color: #ef4444; width:auto; padding:0;"><i data-lucide="x-circle" style="width:18px;"></i></button>
                 </div>
             `).join('');
             lucide.createIcons();
         }
 
-        function renderProductCatalog(prods) {
+        function renderCatalog(items) {
             const container = document.getElementById("catalog-list");
+            container.innerHTML = items.map(p => `
+                <div class="card" style="padding: 1rem;">
+                    <div style="font-weight: 800; color: var(--primary);">${p.nombre}</div>
+                    <div style="font-size: 0.65rem; color: var(--text-muted); text-transform:uppercase;">${p.unidades_permitidas || 'Cualquiera'}</div>
+                    <button onclick="handleDel(${p.id},'deleteProducto')" style="margin-top: 0.75rem; background:rgba(239,68,68,0.05); color:#ef4444; padding:0.5rem; font-size:0.8rem;">Borrar</button>
+                </div>
+            `).join('');
+        }
+
+        function renderMap(prods) {
+            const container = document.getElementById("rel-viewer");
             container.innerHTML = prods.map(p => `
-                <div class="card" style="padding: 1.25rem;">
-                    <div style="font-weight: 800; color: var(--primary); margin-bottom: 0.25rem;">${p.nombre}</div>
-                    <div style="font-size: 0.7rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">
-                        ${p.categoria.nombre} | ${p.unidades_permitidas || 'Cualquiera'}
-                    </div>
-                    <div style="margin-top: 1rem; border-top: 1px solid #f1f5f9; padding-top: 0.75rem; text-align: right;">
-                        <button onclick="handleRemove(${p.id},'deleteProducto')" style="background:transparent; color:#ef4444; width:auto; padding:0; font-size: 0.8rem;">
-                            Eliminar Maestro
-                        </button>
+                <div class="card" style="padding: 1rem;">
+                    <div style="font-weight: 700; margin-bottom: 0.5rem;">${p.nombre}</div>
+                    <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                        ${p.marcas.map(m => `
+                            <div class="pill">${m.nombre}<button onclick="unlink(${p.id},${m.id})" style="background:transparent; color:#ef4444; width:auto; padding:0; height:auto;">×</button></div>
+                        `).join('') || '<span style="font-size:0.7rem; font-style:italic;">Sin marcas</span>'}
                     </div>
                 </div>
             `).join('');
-            lucide.createIcons();
         }
 
-        function renderRelationalMatrix(prods) {
-            const container = document.getElementById("rel-matrix");
-            container.innerHTML = prods.map(p => `
-                <div class="mapping-row">
-                    <div class="mapping-product">${p.nombre}</div>
-                    <div class="mapping-brands">
-                        ${p.marcas.length > 0 ? p.marcas.map(m => `
-                            <div class="pill">
-                                ${m.nombre}
-                                <button onclick="unlink(${p.id}, ${m.id})">×</button>
-                            </div>
-                        `).join('') : '<div class="empty-indicator">Sin relaciones definidas</div>'}
-                    </div>
-                    <button class="btn-add-rel" onclick="prepLink(${p.id})" title="Añadir Marca">
-                        <i data-lucide="plus" style="width: 18px;"></i>
-                    </button>
-                </div>
-            `).join('');
-            lucide.createIcons();
-        }
-
-        // --- Logic Actions ---
-
-        async function quickAdd(entity, inputId) {
+        async function quickAdd(type, inputId) {
             const val = document.getElementById(inputId).value;
             if (!val) return;
-            await ApiService[`create${entity}`](val);
+            await ApiService[`create${type}`](val);
             document.getElementById(inputId).value = "";
             init();
         }
 
         async function createMasterProduct() {
-            const name = document.getElementById("p-name").value;
-            const cat = document.getElementById("p-cat").value;
-            const units = document.getElementById("p-units").value;
-            if (!name) return;
-            await ApiService.createProducto(name, cat, units);
-            document.getElementById("p-name").value = "";
-            document.getElementById("p-units").value = "";
+            const n = document.getElementById("p-name").value;
+            const c = document.getElementById("p-cat").value;
+            const u = document.getElementById("p-units").value;
+            if (!n) return;
+            await ApiService.createProducto(n, c, u);
             init();
         }
 
-        async function establishLink() {
+        async function linkPM() {
             await ApiService.linkProductoMarca(document.getElementById("rel-p").value, document.getElementById("rel-m").value);
             init();
         }
@@ -604,25 +242,16 @@
             init();
         }
 
-        async function handleRemove(id, method) {
-            if (!confirm("¿Estás seguro? Esta acción borrará el registro base.")) return;
+        async function handleDel(id, method) {
+            if (!confirm("¿Eliminar?")) return;
             await ApiService[method](id);
             init();
         }
 
-        function filterCatalog() {
-            const q = document.getElementById('search-prod').value.toLowerCase();
-            const filtered = fullData.prods.filter(p =>
-                p.nombre.toLowerCase().includes(q) ||
-                p.categoria.nombre.toLowerCase().includes(q)
-            );
-            renderProductCatalog(filtered);
-        }
-
-        function prepLink(pId) {
-            document.getElementById('rel-p').value = pId;
-            switchSection('section-rels');
-            // Podríamos hacer scroll al selector de marca
+        function filterP() {
+            const q = document.getElementById("p-search").value.toLowerCase();
+            const filtered = allProds.filter(p => p.nombre.toLowerCase().includes(q));
+            renderCatalog(filtered);
         }
 
         document.addEventListener("DOMContentLoaded", init);
