@@ -98,7 +98,11 @@ def get_productos(db: Session = Depends(get_db)):
 
 @app.post("/catalog/productos", response_model=schemas.Producto)
 def create_producto(prod: schemas.ProductoCreate, db: Session = Depends(get_db)):
-    nuevo = models.Producto(nombre=prod.nombre, categoria_id=prod.categoria_id)
+    nuevo = models.Producto(
+        nombre=prod.nombre, 
+        categoria_id=prod.categoria_id,
+        unidades_permitidas=prod.unidades_permitidas
+    )
     db.add(nuevo)
     db.commit()
     db.refresh(nuevo)
@@ -261,9 +265,30 @@ def startup_db_fix():
 @app.on_event("startup")
 def seed_data():
     db = SessionLocal()
-    if not db.query(models.Categoria).first():
-        # ... logic inherited from before for initial seed ...
-        pass
-    db.close()
+    try:
+        # Semilla de Categorías
+        if not db.query(models.Categoria).first():
+            cats = ["Bebidas", "Lácteos", "Despensa", "Carnicería", "Frutería", "Limpieza", "Higiene"]
+            for c in cats:
+                db.add(models.Categoria(nombre=c))
+            db.commit()
+
+        # Semilla de Supermercados
+        if not db.query(models.Supermercado).first():
+            supers = ["Mercadona", "Carrefour", "Lidl", "Aldi", "Dia", "Eroski"]
+            for s in supers:
+                db.add(models.Supermercado(nombre=s))
+            db.commit()
+
+        # Semilla de Marcas
+        if not db.query(models.Marca).first():
+            marcas = ["Hacendado", "Carrefour", "Nestlé", "Coca-Cola", "Danone", "Pascual"]
+            for m in marcas:
+                db.add(models.Marca(nombre=m))
+            db.commit()
+    except Exception as e:
+        print(f"Error seeding data: {e}")
+    finally:
+        db.close()
 
 app.mount("/", StaticFiles(directory="frontend", html=True), name="frontend")
