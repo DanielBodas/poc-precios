@@ -27,6 +27,10 @@ def get_config():
     content = f"window.BACKEND_URL = '{backend_url}';"
     return Response(content=content, media_type="application/javascript")
 
+@app.get("/health")
+def health_check():
+    return {"status": "ok"}
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],

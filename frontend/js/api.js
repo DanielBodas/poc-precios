@@ -1,5 +1,5 @@
-// Prioridad: 1. Variable manual, 2. Endpoint /config.js, 3. Fallback inteligente
-const API_URL = window.BACKEND_URL || (window.location.port === "5500" ? "http://127.0.0.1:8000" : "");
+// Prioridad: 1. Variable de entorno (via /config.js), 2. Desarrollo local, 3. Rutas relativas
+const API_URL = window.BACKEND_URL || ((window.location.port === "5500" || window.location.port === "5501") ? "http://127.0.0.1:8000" : "");
 
 const ApiService = {
     async getPrecios() {
