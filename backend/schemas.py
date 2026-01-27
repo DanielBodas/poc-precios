@@ -21,17 +21,29 @@ class Marca(MarcaBase):
     id: int
     class Config: from_attributes = True
 
+# --- Unidad ---
+class UnidadBase(BaseModel):
+    nombre: str
+
+class UnidadCreate(UnidadBase): pass
+
+class Unidad(UnidadBase):
+    id: int
+    class Config: from_attributes = True
+
 # --- Producto ---
 class ProductoBase(BaseModel):
     nombre: str
-    categoria_id: int
-    unidades_permitidas: Optional[str] = None
 
-class ProductoCreate(ProductoBase): pass
+class ProductoCreate(ProductoBase):
+    categoria_ids: List[int] = []
+    unidad_ids: List[int] = []
+    marca_ids: List[int] = []
 
 class Producto(ProductoBase):
     id: int
-    categoria: Optional[Categoria] = None
+    categorias: List[Categoria] = []
+    unidades: List[Unidad] = []
     marcas: List[Marca] = []
     class Config: from_attributes = True
 
@@ -73,7 +85,7 @@ class PrecioDisplay(BaseModel):
     supermercado_id: int
     producto: str
     marca: str
-    categoria: str
+    categoria: str # Mostrará categorías separadas por comas
     supermercado: str
     cantidad: float
     unidad: str
@@ -83,7 +95,15 @@ class PrecioDisplay(BaseModel):
     tipo_oferta: Optional[str] = None
     fecha: str
 
-# Relaciones
+# Relaciones (obsoletas si usamos ProductoCreate con IDs, pero las mantengo por si acaso)
 class LinkProductoMarca(BaseModel):
     producto_id: int
     marca_id: int
+
+class LinkProductoCategoria(BaseModel):
+    producto_id: int
+    categoria_id: int
+
+class LinkProductoUnidad(BaseModel):
+    producto_id: int
+    unidad_id: int

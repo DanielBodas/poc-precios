@@ -17,7 +17,7 @@
     <style>
         .kpi-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 1rem;
             margin-bottom: 2rem;
         }
@@ -46,6 +46,74 @@
             letter-spacing: 0.05em;
         }
 
+        .chart-container {
+            background: white;
+            padding: 1.5rem;
+            border-radius: var(--radius);
+            margin-bottom: 1.5rem;
+            box-shadow: var(--shadow);
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 300px;
+        }
+
+        .super-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .super-card {
+            background: white;
+            padding: 1.25rem;
+            border-radius: 12px;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            box-shadow: var(--shadow);
+        }
+
+        .super-card h4 {
+            font-size: 0.95rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            font-size: 0.85rem;
+        }
+
+        .stat-row:last-child {
+            border-bottom: none;
+        }
+
+        .stat-label {
+            color: var(--text-muted);
+        }
+
+        .stat-value {
+            font-weight: 700;
+            color: var(--text-dark);
+        }
+
+        .winner-badge {
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            display: inline-block;
+        }
+
         .history-table {
             width: 100%;
             border-collapse: collapse;
@@ -72,24 +140,18 @@
         .trend-down {
             color: #22c55e;
         }
-
-        #chart-container {
-            background: white;
-            padding: 1.25rem;
-            border-radius: var(--radius);
-            margin-bottom: 2rem;
-            height: 280px;
-            box-shadow: var(--shadow);
-        }
     </style>
 </head>
 
 <body>
     <div class="container animate-in">
         <header>
-            <h1 class="page-title">Histórico</h1>
+            <h1 class="page-title">Análisis Comparativo</h1>
             <div class="card" style="padding: 1rem; margin-bottom: 2rem;">
-                <label>¿Qué quieres analizar?</label>
+                <label>¿Qué producto quieres analizar?</label>
+                <input type="text" id="p-search-compare" placeholder="🔍 Filtrar producto..."
+                    onkeyup="filterProducts(this.value)"
+                    style="margin-bottom:0.5rem; padding:0.75rem; border-radius:10px; border:1px solid rgba(0,0,0,0.1); width:100%;">
                 <select id="select-doc-compare" style="margin-top: 0.5rem;">
                     <option value="">Cargando...</option>
                 </select>
@@ -97,42 +159,65 @@
         </header>
 
         <main id="analysis-content" style="display: none;">
+            <!-- KPIs Globales -->
             <div class="kpi-grid">
                 <div class="kpi-card">
-                    <div class="kpi-label">Último</div>
+                    <div class="kpi-label">Último Precio</div>
                     <div id="kpi-last" class="kpi-value">--</div>
                     <div id="kpi-last-store"
                         style="font-size: 0.7rem; color: var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
                         --</div>
                 </div>
                 <div class="kpi-card">
-                    <div class="kpi-label">Media</div>
+                    <div class="kpi-label">Precio Medio</div>
                     <div id="kpi-avg" class="kpi-value">--</div>
                     <div id="kpi-vs-avg" style="font-size: 0.7rem; font-weight: 700;">--</div>
                 </div>
                 <div class="kpi-card">
-                    <div class="kpi-label">Mínimo</div>
+                    <div class="kpi-label">Mejor Precio</div>
                     <div id="kpi-min" class="kpi-value" style="color: var(--success);">--</div>
                     <div id="kpi-min-store"
                         style="font-size: 0.7rem; color: var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
                         --</div>
                 </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Registros</div>
+                    <div id="kpi-count" class="kpi-value" style="color: var(--primary);">--</div>
+                    <div style="font-size: 0.7rem; color: var(--text-muted);">Total de precios</div>
+                </div>
             </div>
 
-            <div id="chart-container">
-                <canvas id="priceChart"></canvas>
+            <!-- Gráfico Comparativo por Supermercado -->
+            <div class="chart-container">
+                <h3 style="margin-bottom: 1rem; font-size: 1.1rem;">
+                    <i data-lucide="trending-up" style="width:18px; vertical-align:middle;"></i>
+                    Evolución de Precios por Supermercado
+                </h3>
+                <div class="chart-wrapper">
+                    <canvas id="priceChart"></canvas>
+                </div>
             </div>
 
+            <!-- Estadísticas por Supermercado -->
+            <h3 style="margin-bottom: 1rem; font-size: 1.1rem;">
+                <i data-lucide="bar-chart-3" style="width:18px; vertical-align:middle;"></i>
+                Comparativa por Establecimiento
+            </h3>
+            <div id="super-stats" class="super-stats"></div>
+
+            <!-- Tabla de Historial Completo -->
             <section class="card">
-                <h3 style="margin-bottom: 1rem;">Detalle</h3>
+                <h3 style="margin-bottom: 1rem;">Historial Detallado</h3>
                 <div style="overflow-x: auto;">
                     <table class="history-table">
                         <thead>
                             <tr>
-                                <th>📅</th>
-                                <th>Precio</th>
-                                <th>Súper</th>
+                                <th>📅 Fecha</th>
+                                <th>Precio/Unidad</th>
+                                <th>Supermercado</th>
                                 <th>Marca</th>
+                                <th>Cantidad</th>
+                                <th>Oferta</th>
                             </tr>
                         </thead>
                         <tbody id="history-body"></tbody>
@@ -143,7 +228,7 @@
 
         <div id="empty-state-search" class="empty-state">
             <i data-lucide="line-chart" style="width: 48px; height: 48px; margin-bottom: 1rem; opacity: 0.2;"></i>
-            <p>Elige un producto para ver su evolución.</p>
+            <p>Elige un producto para ver su evolución y comparativa.</p>
         </div>
     </div>
 
@@ -152,11 +237,29 @@
     <script src="js/components.js"></script>
     <script>
         let priceChart = null;
+        let allProducts = [];
+
         async function init() {
             const p = await ApiService.getCatalogProductos();
+            allProducts = p.sort((a, b) => a.nombre.localeCompare(b.nombre));
+
+            updateSelect(allProducts);
+
             const s = document.getElementById("select-doc-compare");
-            s.innerHTML = '<option value="">Elige un producto...</option>' + p.sort((a, b) => a.nombre.localeCompare(b.nombre)).map(x => `<option value="${x.id}">${x.nombre}</option>`).join('');
             s.onchange = (e) => load(e.target.value);
+        }
+
+        function updateSelect(filtered) {
+            const s = document.getElementById("select-doc-compare");
+            const current = s.value;
+            s.innerHTML = '<option value="">Elige un producto...</option>' + filtered.map(x => `<option value="${x.id}">${x.nombre}</option>`).join('');
+            if (filtered.find(x => x.id == current)) s.value = current;
+        }
+
+        function filterProducts(q) {
+            const lowerQ = q.toLowerCase();
+            const filtered = allProducts.filter(p => p.nombre.toLowerCase().includes(lowerQ));
+            updateSelect(filtered);
         }
 
         async function load(id) {
@@ -169,11 +272,16 @@
             document.getElementById('empty-state-search').style.display = 'none';
 
             const h = await ApiService.getPrecioHistorial(id);
-            if (h.length === 0) return;
+            if (h.length === 0) {
+                alert("No hay datos históricos para este producto");
+                return;
+            }
 
             renderKPIs(h);
-            renderChart(h);
+            renderChartBySupermarket(h);
+            renderSuperStats(h);
             renderTable(h);
+            lucide.createIcons();
         }
 
         function renderKPIs(h) {
@@ -189,6 +297,7 @@
             document.getElementById('kpi-min').textContent = fmt(min);
             document.getElementById('kpi-min-store').textContent = h.find(x => x.precio_unidad === min).supermercado;
             document.getElementById('kpi-avg').textContent = fmt(avg);
+            document.getElementById('kpi-count').textContent = h.length;
 
             const diff = ((last.precio_unidad - avg) / avg * 100);
             const vs = document.getElementById('kpi-vs-avg');
@@ -196,32 +305,135 @@
             vs.className = diff > 0 ? 'trend-up' : 'trend-down';
         }
 
-        function renderChart(h) {
+        function renderChartBySupermarket(h) {
             const ctx = document.getElementById('priceChart').getContext('2d');
             const d = [...h].reverse();
+
+            // Group by supermarket
+            const supermarkets = [...new Set(d.map(x => x.supermercado))];
+            const colors = ['#6366f1', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
+
+            const datasets = supermarkets.map((super_name, idx) => {
+                const data = d.map(x => x.supermercado === super_name ? x.precio_unidad : null);
+                return {
+                    label: super_name,
+                    data: data,
+                    borderColor: colors[idx % colors.length],
+                    backgroundColor: colors[idx % colors.length] + '20',
+                    fill: false,
+                    tension: 0.3,
+                    spanGaps: true,
+                    pointRadius: 4,
+                    pointHoverRadius: 6
+                };
+            });
+
             if (priceChart) priceChart.destroy();
             priceChart = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: d.map(x => new Date(x.fecha).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })),
-                    datasets: [{
-                        data: d.map(x => x.precio_unidad),
-                        borderColor: '#6366f1',
-                        backgroundColor: 'rgba(99, 102, 241, 0.05)',
-                        fill: true, tension: 0.4
-                    }]
+                    datasets: datasets
                 },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            ticks: {
+                                callback: function (value) {
+                                    return value.toFixed(2) + '€';
+                                }
+                            }
+                        }
+                    }
+                }
             });
+        }
+
+        function renderSuperStats(h) {
+            const container = document.getElementById('super-stats');
+
+            // Group by supermarket
+            const bySupermarket = {};
+            h.forEach(p => {
+                if (!bySupermarket[p.supermercado]) {
+                    bySupermarket[p.supermercado] = [];
+                }
+                bySupermarket[p.supermercado].push(p);
+            });
+
+            // Calculate stats for each
+            const stats = Object.entries(bySupermarket).map(([name, prices]) => {
+                const values = prices.map(p => p.precio_unidad);
+                return {
+                    name,
+                    count: prices.length,
+                    min: Math.min(...values),
+                    max: Math.max(...values),
+                    avg: values.reduce((a, b) => a + b, 0) / values.length,
+                    last: prices[0].precio_unidad
+                };
+            });
+
+            // Find winner (lowest average)
+            const winner = stats.reduce((min, s) => s.avg < min.avg ? s : min, stats[0]);
+
+            const fmt = (v) => v.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 3 }) + '€';
+
+            container.innerHTML = stats.sort((a, b) => a.avg - b.avg).map(s => `
+                <div class="super-card">
+                    <h4>
+                        <i data-lucide="store" style="width:16px;"></i>
+                        ${s.name}
+                        ${s.name === winner.name ? '<span class="winner-badge">Mejor Media</span>' : ''}
+                    </h4>
+                    <div class="stat-row">
+                        <span class="stat-label">Precio Medio</span>
+                        <span class="stat-value" style="color:var(--primary);">${fmt(s.avg)}</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Mínimo Histórico</span>
+                        <span class="stat-value" style="color:var(--success);">${fmt(s.min)}</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Máximo Histórico</span>
+                        <span class="stat-value" style="color:var(--danger);">${fmt(s.max)}</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Último Precio</span>
+                        <span class="stat-value">${fmt(s.last)}</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Registros</span>
+                        <span class="stat-value">${s.count}</span>
+                    </div>
+                </div>
+            `).join('');
+
+            lucide.createIcons();
         }
 
         function renderTable(h) {
             document.getElementById('history-body').innerHTML = h.map(x => `
                 <tr>
-                    <td style="font-weight:700;">${new Date(x.fecha).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })}</td>
+                    <td style="font-weight:700;">${new Date(x.fecha).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
                     <td style="color:var(--primary); font-weight:800;">${x.precio_unidad.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 3 })}€</td>
-                    <td>${x.supermercado}</td>
+                    <td><strong>${x.supermercado}</strong></td>
                     <td>${x.marca}</td>
+                    <td>${x.cantidad}${x.unidad}</td>
+                    <td>${x.es_oferta ? '<span class="badge" style="background:var(--warning); color:white;">OFERTA</span>' : '-'}</td>
                 </tr>
             `).join('');
         }

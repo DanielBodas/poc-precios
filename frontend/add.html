@@ -13,6 +13,19 @@
 
     <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="css/main.css">
+    <style>
+        .search-container {
+            margin-bottom: 1.5rem;
+        }
+
+        #p-search-input {
+            width: 100%;
+            padding: 0.75rem;
+            border-radius: 10px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            margin-bottom: 0.5rem;
+        }
+    </style>
 </head>
 
 <body>
@@ -25,6 +38,8 @@
             <form id="p-form" class="card">
                 <div class="form-group">
                     <label>Producto Maestro</label>
+                    <input type="text" id="p-search-input" placeholder="🔍 Buscar producto..."
+                        onkeyup="filterProducts(this.value)">
                     <select id="p-id" required>
                         <option value="">Selecciona...</option>
                     </select>
@@ -85,19 +100,19 @@
     <script>
         let editId = new URLSearchParams(window.location.search).get('id');
         let products = [];
-        const UNITS = ['kg', 'g', 'L', 'ml', 'ud'];
+        const UNITS_FALLBACK = ['kg', 'g', 'L', 'ml', 'ud'];
 
         async function init() {
             try {
                 const [prods, supers] = await Promise.all([ApiService.getCatalogProductos(), ApiService.getCatalogSupermercados()]);
-                products = prods;
+                products = prods.sort((a, b) => a.nombre.localeCompare(b.nombre));
 
-                const pSel = document.getElementById("p-id");
-                pSel.innerHTML = '<option value="">Selecciona...</option>' + prods.sort((a, b) => a.nombre.localeCompare(b.nombre)).map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
+                updateProductSelect(products);
 
                 const sSel = document.getElementById("s-id");
                 sSel.innerHTML = supers.sort((a, b) => a.nombre.localeCompare(b.nombre)).map(s => `<option value="${s.id}">${s.nombre}</option>`).join('');
 
+                const pSel = document.getElementById("p-id");
                 pSel.onchange = sync;
                 document.getElementById("is-off").onchange = (e) => document.getElementById("off-box").style.display = e.target.checked ? 'block' : 'none';
 
@@ -108,15 +123,33 @@
             } catch (e) { console.error(e); }
         }
 
+        function updateProductSelect(filtered) {
+            const pSel = document.getElementById("p-id");
+            const currentVal = pSel.value;
+            pSel.innerHTML = '<option value="">Selecciona...</option>' + filtered.map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
+            if (filtered.find(x => x.id == currentVal)) pSel.value = currentVal;
+        }
+
+        function filterProducts(q) {
+            const lowerQ = q.toLowerCase();
+            const filtered = products.filter(p => p.nombre.toLowerCase().includes(lowerQ));
+            updateProductSelect(filtered);
+        }
+
         function sync() {
             const p = products.find(x => x.id == document.getElementById("p-id").value);
             const mSel = document.getElementById("m-id");
             const uSel = document.getElementById("u");
 
-            if (!p) return;
+            if (!p) {
+                mSel.innerHTML = '<option value="">Elige producto primero...</option>';
+                uSel.innerHTML = '';
+                return;
+            };
 
             mSel.innerHTML = p.marcas.map(m => `<option value="${m.id}">${m.nombre}</option>`).join('') || '<option value="">Sin marcas vinculadas</option>';
-            const allowed = p.unidades_permitidas ? p.unidades_permitidas.split(',').map(x => x.trim()) : UNITS;
+
+            const allowed = p.unidades.length > 0 ? p.unidades.map(u => u.nombre) : UNITS_FALLBACK;
             uSel.innerHTML = allowed.map(u => `<option value="${u}">${u}</option>`).join('');
         }
 

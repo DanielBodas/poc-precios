@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Configuración — PriceTracker Pro</title>
+    <title>Administración — PriceTracker Pro</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,206 +13,611 @@
 
     <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="css/main.css">
-</head>
-
-<body>
-    <div class="container animate-in">
-        <header style="margin-bottom: 2rem;">
-            <h1 class="page-title">Sistema</h1>
-            <!-- Admin Internal Tabs - Mobile Friendly -->
-            <div
-                style="background: rgba(0,0,0,0.03); padding: 0.5rem; border-radius: 16px; display: flex; gap: 0.5rem;">
-                <button class="admin-tab-btn active" onclick="switchSection('sec-db')">Infra</button>
-                <button class="admin-tab-btn" onclick="switchSection('sec-prods')">Catálogo</button>
-                <button class="admin-tab-btn" onclick="switchSection('sec-map')">Mapeo</button>
-            </div>
-        </header>
-
-        <main>
-            <!-- SECCIÓN 1: INFRAESTRUCTURA -->
-            <section id="sec-db" class="admin-section active">
-                <div class="grid-2">
-                    <div class="card">
-                        <label>Añadir Categoría</label>
-                        <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
-                            <input id="in-cat" type="text" placeholder="Ej: Bebidas">
-                            <button onclick="quickAdd('Categoria','in-cat')"
-                                style="width: auto; padding: 0 1rem;">+</button>
-                        </div>
-                        <div id="list-cats" style="margin-top: 1rem; max-height: 200px; overflow-y: auto;"></div>
-                    </div>
-
-                    <div class="card">
-                        <label>Añadir Marca</label>
-                        <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
-                            <input id="in-marca" type="text" placeholder="Ej: Nestlé">
-                            <button onclick="quickAdd('Marca','in-marca')"
-                                style="width: auto; padding: 0 1rem;">+</button>
-                        </div>
-                        <div id="list-marcas" style="margin-top: 1rem; max-height: 200px; overflow-y: auto;"></div>
-                    </div>
-
-                    <div class="card">
-                        <label>Nuevo Supermercado</label>
-                        <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
-                            <input id="in-super" type="text" placeholder="Ej: Aldi">
-                            <button onclick="quickAdd('Supermercado','in-super')"
-                                style="width: auto; padding: 0 1rem;">+</button>
-                        </div>
-                        <div id="list-supers" style="margin-top: 1rem; max-height: 200px; overflow-y: auto;"></div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- SECCIÓN 2: CATÁLOGO PRODUCTORES -->
-            <section id="sec-prods" class="admin-section" style="display: none;">
-                <div class="card" style="margin-bottom: 2rem;">
-                    <label>Crear Producto Maestro</label>
-                    <div style="display: flex; flex-direction: column; gap: 1rem; margin-top: 0.5rem;">
-                        <input id="p-name" type="text" placeholder="Nombre (ej: Yogur Griego)">
-                        <div class="grid-2">
-                            <select id="p-cat"></select>
-                            <input id="p-units" type="text" placeholder="kg,g o ud">
-                        </div>
-                        <button onclick="createMasterProduct()">Añadir al Catálogo</button>
-                    </div>
-                </div>
-
-                <input type="text" id="p-search" placeholder="🔍 Buscar productos..." onkeyup="filterP()"
-                    style="margin-bottom: 1rem;">
-                <div id="catalog-list" class="grid-2"></div>
-            </section>
-
-            <!-- SECCIÓN 3: MAPEO INTELIGENTE -->
-            <section id="sec-map" class="admin-section" style="display: none;">
-                <div class="card" style="margin-bottom: 2rem; border-color: var(--primary);">
-                    <label>Vincular Marca a Producto</label>
-                    <div style="display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem;">
-                        <select id="rel-p"></select>
-                        <select id="rel-m"></select>
-                        <button onclick="linkPM()">Establecer Relación</button>
-                    </div>
-                </div>
-
-                <div id="rel-viewer" style="display: flex; flex-direction: column; gap: 0.75rem;"></div>
-            </section>
-        </main>
-    </div>
-
     <style>
+        :root {
+            --sidebar-w: 260px;
+        }
+
+        .admin-layout {
+            display: flex;
+            gap: 2rem;
+            margin-top: 1rem;
+            align-items: flex-start;
+        }
+
+        .admin-sidebar {
+            width: var(--sidebar-w);
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            flex-shrink: 0;
+            position: sticky;
+            top: 90px;
+        }
+
+        .sidebar-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .sidebar-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+            font-weight: 800;
+            padding: 0 0 0.5rem 0;
+            display: block;
+            text-align: left;
+        }
+
+        .admin-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .side-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            border-radius: 12px;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: left;
+            width: 100%;
+            font-size: 0.9rem;
+        }
+
+        .side-btn:hover {
+            background: rgba(99, 102, 241, 0.05);
+            color: var(--primary);
+        }
+
+        .side-btn.active {
+            background: white;
+            color: var(--primary);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            border: 1px solid rgba(99, 102, 241, 0.1);
+        }
+
+        .side-btn i {
+            width: 18px;
+            height: 18px;
+        }
+
         .admin-section {
             animation: fadeIn 0.3s ease-out;
+            display: none;
+        }
+
+        .admin-section.active {
+            display: block;
         }
 
         .row-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 0.75rem;
-            background: #fff;
+            padding: 0.85rem 1rem;
+            background: white;
             border-radius: 12px;
             margin-bottom: 0.5rem;
-            border: 1px solid rgba(0, 0, 0, 0.03);
-            font-size: 0.9rem;
+            border: 1px solid rgba(0, 0, 0, 0.05);
         }
 
-        .pill {
+        .search-box-mini {
+            margin-bottom: 0.5rem;
+            padding: 0.7rem;
+            border-radius: 10px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            width: 100%;
+            font-size: 0.85rem;
+        }
+
+        .tag-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 0.75rem;
+            min-height: 40px;
+            padding: 0.5rem;
+            background: rgba(0, 0, 0, 0.01);
+            border-radius: 10px;
+            border: 1px dashed rgba(0, 0, 0, 0.1);
+        }
+
+        .tag-pill {
             background: rgba(99, 102, 241, 0.08);
             color: var(--primary);
-            padding: 0.25rem 0.6rem;
-            border-radius: 8px;
-            font-size: 0.75rem;
+            padding: 0.4rem 0.85rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
             font-weight: 700;
             display: flex;
             align-items: center;
-            gap: 4px;
+            gap: 8px;
+        }
+
+        .tag-pill button {
+            background: transparent;
+            border: none;
+            color: #ef4444;
+            padding: 0;
+            width: auto;
+            cursor: pointer;
+            box-shadow: none;
+            height: auto;
+            font-size: 1.1rem;
+            line-height: 1;
+        }
+
+        .tag-pill button:hover {
+            transform: scale(1.3);
+        }
+
+        .relation-block {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .relation-block h4 {
+            font-size: 0.95rem;
+            margin-bottom: 1rem;
+            color: var(--text-dark);
+            font-weight: 700;
+        }
+
+        @media (max-width: 900px) {
+            .admin-layout {
+                flex-direction: column;
+            }
+
+            .admin-sidebar {
+                width: 100%;
+                position: static;
+                flex-direction: row;
+                flex-wrap: wrap;
+            }
+
+            .sidebar-group {
+                margin-bottom: 1rem;
+                width: 100%;
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.5rem;
+            }
+
+            .sidebar-label {
+                width: 100%;
+                margin-top: 0.5rem;
+            }
+
+            .side-btn {
+                width: auto;
+            }
         }
 
         @keyframes fadeIn {
             from {
                 opacity: 0;
+                transform: translateY(5px);
             }
 
             to {
                 opacity: 1;
+                transform: translateY(0);
             }
         }
+
+        .save-btn {
+            background: linear-gradient(135deg, var(--primary), #818cf8);
+            color: white;
+            font-weight: 700;
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+            transition: all 0.2s;
+            width: 100%;
+            font-size: 1rem;
+        }
+
+        .save-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4);
+        }
+
+        .save-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
     </style>
+</head>
+
+<body>
+    <div class="container animate-in">
+        <header>
+            <h1 class="page-title">Sistema Maestro</h1>
+        </header>
+
+        <div class="admin-layout">
+            <!-- Sidebar with Groups -->
+            <nav class="admin-sidebar">
+
+                <div class="sidebar-group">
+                    <span class="sidebar-label">Registro de Datos</span>
+                    <button class="side-btn active" onclick="showTab('reg-prods', this)">
+                        <i data-lucide="package-plus"></i> Productos
+                    </button>
+                    <button class="side-btn" onclick="showTab('reg-marcas', this)">
+                        <i data-lucide="award"></i> Marcas
+                    </button>
+                    <button class="side-btn" onclick="showTab('reg-supers', this)">
+                        <i data-lucide="store"></i> Supermercados
+                    </button>
+                    <button class="side-btn" onclick="showTab('reg-cats', this)">
+                        <i data-lucide="tag"></i> Categorías
+                    </button>
+                    <button class="side-btn" onclick="showTab('reg-units', this)">
+                        <i data-lucide="scale"></i> Unidades
+                    </button>
+                </div>
+
+                <div class="sidebar-group">
+                    <span class="sidebar-label">Mapeo y Relaciones</span>
+                    <button class="side-btn" onclick="showTab('rel-main', this)">
+                        <i data-lucide="link-2"></i> Vincular Propiedades
+                    </button>
+                </div>
+            </nav>
+
+            <!-- Content Area -->
+            <main class="admin-content">
+
+                <!-- REGISTRO: PRODUCTOS -->
+                <section id="reg-prods" class="admin-section active">
+                    <div class="card">
+                        <h2 style="font-size: 1.2rem; margin-bottom: 1rem;">Alta de Productos Maestros</h2>
+                        <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+                            <input id="in-prod-name" type="text" placeholder="Nombre (ej: Manzanas Fuji)"
+                                onkeyup="checkFast(this.value)">
+                            <button onclick="addProdMaster()" style="width: auto; padding: 0 1.5rem;">Registrar</button>
+                        </div>
+                        <div id="fast-alert"
+                            style="color:var(--primary); font-size:0.8rem; margin-bottom:1rem; display:none; font-weight:700;">
+                            ⚠️ Nota: Ya existe un producto con este nombre o similar.
+                        </div>
+                        <h3 style="font-size: 0.9rem; margin-top: 2rem; margin-bottom: 1rem;">Catálogo registrado</h3>
+                        <input type="text" class="search-box-mini" placeholder="🔍 Buscar..."
+                            onkeyup="filterList('catalog-list', this.value)">
+                        <div id="catalog-list" style="max-height: 400px; overflow-y: auto;"></div>
+                    </div>
+                </section>
+
+                <!-- REGISTRO: MARCAS -->
+                <section id="reg-marcas" class="admin-section">
+                    <div class="card">
+                        <h2 style="font-size: 1.2rem; margin-bottom: 1rem;">Registro de Marcas</h2>
+                        <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem;">
+                            <input id="in-marca" type="text" placeholder="Ej: Nestlé">
+                            <button onclick="quickAdd('Marca','in-marca')"
+                                style="width: auto; padding: 0 1.5rem;">Añadir</button>
+                        </div>
+                        <div id="list-marcas" style="max-height: 500px; overflow-y: auto; column-count: 2;"></div>
+                    </div>
+                </section>
+
+                <!-- REGISTRO: SUPERS -->
+                <section id="reg-supers" class="admin-section">
+                    <div class="card">
+                        <h2 style="font-size: 1.2rem; margin-bottom: 1rem;">Registro de Supermercados</h2>
+                        <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem;">
+                            <input id="in-super" type="text" placeholder="Ej: Mercadona">
+                            <button onclick="quickAdd('Supermercado','in-super')"
+                                style="width: auto; padding: 0 1.5rem;">Añadir</button>
+                        </div>
+                        <div id="list-supers" style="max-height: 500px; overflow-y: auto;"></div>
+                    </div>
+                </section>
+
+                <!-- REGISTRO: CATEGORIAS -->
+                <section id="reg-cats" class="admin-section">
+                    <div class="card">
+                        <h2 style="font-size: 1.2rem; margin-bottom: 1rem;">Registro de Categorías</h2>
+                        <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem;">
+                            <input id="in-cat" type="text" placeholder="Ej: Lácteos">
+                            <button onclick="quickAdd('Categoria','in-cat')"
+                                style="width: auto; padding: 0 1.5rem;">Añadir</button>
+                        </div>
+                        <div id="list-cats" style="max-height: 500px; overflow-y: auto;"></div>
+                    </div>
+                </section>
+
+                <!-- REGISTRO: UNIDADES -->
+                <section id="reg-units" class="admin-section">
+                    <div class="card">
+                        <h2 style="font-size: 1.2rem; margin-bottom: 1rem;">Registro de Unidades</h2>
+                        <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem;">
+                            <input id="in-unit" type="text" placeholder="Ej: kg, g, L, ud">
+                            <button onclick="quickAdd('Unidad','in-unit')"
+                                style="width: auto; padding: 0 1.5rem;">Añadir</button>
+                        </div>
+                        <div id="list-units" style="max-height: 500px; overflow-y: auto;"></div>
+                    </div>
+                </section>
+
+                <!-- RELACIONES: GESTOR -->
+                <section id="rel-main" class="admin-section">
+                    <div class="card" style="margin-bottom: 2rem;">
+                        <h2 style="font-size: 1.3rem; margin-bottom: 1.5rem;">Gestor de Relaciones</h2>
+                        <div style="margin-bottom: 2rem;">
+                            <label style="font-weight: 700; margin-bottom: 0.5rem; display: block;">Selecciona el
+                                Producto a Configurar</label>
+                            <input type="text" class="search-box-mini" placeholder="🔍 Filtrar productos..."
+                                onkeyup="filterSelect('sel-prod-rel', this.value)">
+                            <select id="sel-prod-rel" style="margin-top: 0.5rem;"
+                                onchange="loadProductState(this.value)">
+                                <option value="">Elige un producto...</option>
+                            </select>
+                        </div>
+
+                        <div id="mapping-controls" style="display: none;">
+
+                            <!-- CATEGORIAS -->
+                            <div class="relation-block">
+                                <h4><i data-lucide="tag" style="width:16px; vertical-align:middle;"></i> Categorías /
+                                    Tags</h4>
+                                <div style="display: flex; gap: 0.5rem; margin-bottom: 0.75rem;">
+                                    <select id="sel-add-cat" style="flex: 1;"></select>
+                                    <button onclick="addRelation('Categoria')"
+                                        style="background:var(--success); width: auto; padding: 0 1.5rem;">
+                                        <i data-lucide="plus" style="width:14px;"></i> Vincular
+                                    </button>
+                                </div>
+                                <div id="cur-cats" class="tag-list"></div>
+                            </div>
+
+                            <!-- UNIDADES -->
+                            <div class="relation-block">
+                                <h4><i data-lucide="scale" style="width:16px; vertical-align:middle;"></i> Unidades de
+                                    Venta</h4>
+                                <div style="display: flex; gap: 0.5rem; margin-bottom: 0.75rem;">
+                                    <select id="sel-add-unit" style="flex: 1;"></select>
+                                    <button onclick="addRelation('Unidad')"
+                                        style="background:var(--success); width: auto; padding: 0 1.5rem;">
+                                        <i data-lucide="plus" style="width:14px;"></i> Vincular
+                                    </button>
+                                </div>
+                                <div id="cur-units" class="tag-list"></div>
+                            </div>
+
+                            <!-- MARCAS -->
+                            <div class="relation-block">
+                                <h4><i data-lucide="award" style="width:16px; vertical-align:middle;"></i> Marcas
+                                    Disponibles</h4>
+                                <div style="display: flex; gap: 0.5rem; margin-bottom: 0.75rem;">
+                                    <select id="sel-add-marca" style="flex: 1;"></select>
+                                    <button onclick="addRelation('Marca')"
+                                        style="background:var(--success); width: auto; padding: 0 1.5rem;">
+                                        <i data-lucide="plus" style="width:14px;"></i> Vincular
+                                    </button>
+                                </div>
+                                <div id="cur-marcas" class="tag-list"></div>
+                            </div>
+
+                            <!-- GUARDAR TODO -->
+                            <div style="margin-top: 2rem; padding-top: 2rem; border-top: 2px solid #f1f5f9;">
+                                <button onclick="saveAllChanges()" class="save-btn" id="btn-save-all">
+                                    <i data-lucide="check-circle" style="width:20px; vertical-align:middle;"></i>
+                                    Guardar Configuración Completa
+                                </button>
+                                <p
+                                    style="text-align: center; margin-top: 1rem; font-size: 0.8rem; color: var(--text-muted);">
+                                    Los cambios se guardan automáticamente al vincular/desvincular. Este botón recarga
+                                    el producto.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+            </main>
+        </div>
+    </div>
 
     <script src="config.js"></script>
     <script src="js/api.js"></script>
     <script src="js/components.js"></script>
     <script>
         let allProds = [];
+        let allCats = [];
+        let allMarcas = [];
+        let allUnits = [];
+        let curProdId = null;
 
         async function init() {
             try {
-                const [cats, marcas, supers, prods] = await Promise.all([
+                const [cats, marcas, supers, units, prods] = await Promise.all([
                     ApiService.getCatalogCategorias(),
                     ApiService.getCatalogMarcas(),
                     ApiService.getCatalogSupermercados(),
+                    ApiService.getCatalogUnidades(),
                     ApiService.getCatalogProductos()
                 ]);
 
                 allProds = prods;
+                allCats = cats;
+                allMarcas = marcas;
+                allUnits = units;
 
-                renderList("list-cats", cats, 'deleteCategoria');
+                // Lists registry
+                renderList("catalog-list", prods, 'deleteProducto');
                 renderList("list-marcas", marcas, 'deleteMarca');
                 renderList("list-supers", supers, 'deleteSupermercado');
-                renderCatalog(prods);
-                renderMap(prods);
+                renderList("list-cats", cats, 'deleteCategoria');
+                renderList("list-units", units, 'deleteUnidad');
 
-                const pop = (id, items) => {
-                    const el = document.getElementById(id);
-                    el.innerHTML = items.sort((a, b) => a.nombre.localeCompare(b.nombre)).map(i => `<option value="${i.id}">${i.nombre}</option>`).join('');
+                // Populate selects for relations
+                const popSelect = (id, items) => {
+                    document.getElementById(id).innerHTML = '<option value="">Selecciona...</option>' + items.sort((a, b) => a.nombre.localeCompare(b.nombre)).map(x => `<option value="${x.id}">${x.nombre}</option>`).join('');
                 };
-                pop('p-cat', cats);
-                pop('rel-p', prods);
-                pop('rel-m', marcas);
+                popSelect('sel-prod-rel', prods);
+                popSelect('sel-add-cat', cats);
+                popSelect('sel-add-marca', marcas);
+                popSelect('sel-add-unit', units);
+
+                lucide.createIcons();
             } catch (e) { console.error(e); }
         }
 
-        function switchSection(id) {
-            document.querySelectorAll('.admin-section').forEach(s => s.style.display = 'none');
-            document.querySelectorAll('.admin-tab-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById(id).style.display = 'block';
-            event.target.classList.add('active');
+        function showTab(id, btn) {
+            document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.side-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            btn.classList.add('active');
         }
 
         function renderList(id, items, method) {
             const container = document.getElementById(id);
-            container.innerHTML = items.map(i => `
-                <div class="row-item">
-                    <span>${i.nombre}</span>
-                    <button onclick="handleDel(${i.id},'${method}')" style="background:transparent; color: #ef4444; width:auto; padding:0;"><i data-lucide="x-circle" style="width:18px;"></i></button>
+            container.innerHTML = items.sort((a, b) => a.nombre.localeCompare(b.nombre)).map(i => `
+                <div class="row-item" data-name="${i.nombre.toLowerCase()}">
+                    <span style="font-weight:600;">${i.nombre}</span>
+                    <button onclick="handleDel(${i.id},'${method}')" style="background:transparent; color:#ef4444; width:auto; padding:0; box-shadow:none;"><i data-lucide="x-circle" style="width:16px;"></i></button>
                 </div>
             `).join('');
             lucide.createIcons();
         }
 
-        function renderCatalog(items) {
-            const container = document.getElementById("catalog-list");
-            container.innerHTML = items.map(p => `
-                <div class="card" style="padding: 1rem;">
-                    <div style="font-weight: 800; color: var(--primary);">${p.nombre}</div>
-                    <div style="font-size: 0.65rem; color: var(--text-muted); text-transform:uppercase;">${p.unidades_permitidas || 'Cualquiera'}</div>
-                    <button onclick="handleDel(${p.id},'deleteProducto')" style="margin-top: 0.75rem; background:rgba(239,68,68,0.05); color:#ef4444; padding:0.5rem; font-size:0.8rem;">Borrar</button>
+        function filterList(id, q) {
+            const lowerQ = q.toLowerCase();
+            document.querySelectorAll(`#${id} .row-item`).forEach(el => {
+                el.style.display = el.dataset.name.includes(lowerQ) ? 'flex' : 'none';
+            });
+        }
+
+        function filterSelect(sid, q) {
+            const lowerQ = q.toLowerCase();
+            const opts = document.getElementById(sid).options;
+            for (let i = 1; i < opts.length; i++) {
+                opts[i].style.display = opts[i].text.toLowerCase().includes(lowerQ) ? 'block' : 'none';
+            }
+        }
+
+        function checkFast(val) {
+            const alert = document.getElementById("fast-alert");
+            if (val.length < 3) return alert.style.display = 'none';
+            const exists = allProds.some(p => p.nombre.toLowerCase().includes(val.toLowerCase()));
+            alert.style.display = exists ? 'block' : 'none';
+        }
+
+        async function addProdMaster() {
+            const n = document.getElementById("in-prod-name").value.trim();
+            if (!n) {
+                alert("El nombre del producto es obligatorio");
+                return;
+            }
+
+            try {
+                await ApiService.createProducto(n, [], [], []);
+                document.getElementById("in-prod-name").value = "";
+                document.getElementById("fast-alert").style.display = 'none';
+                await init();
+                alert("✓ Producto registrado correctamente");
+            } catch (e) {
+                console.error("Error al crear producto:", e);
+                alert("Error al crear el producto. Revisa la consola para más detalles.");
+            }
+        }
+
+        async function loadProductState(pid) {
+            curProdId = pid;
+            const controls = document.getElementById("mapping-controls");
+            if (!pid) { controls.style.display = 'none'; return; }
+            controls.style.display = 'block';
+
+            const p = allProds.find(x => x.id == pid);
+            renderTags('cur-cats', p.categorias, 'Categoria');
+            renderTags('cur-marcas', p.marcas, 'Marca');
+            renderTags('cur-units', p.unidades, 'Unidad');
+            lucide.createIcons();
+        }
+
+        function renderTags(id, items, type) {
+            const container = document.getElementById(id);
+            if (items.length === 0) {
+                container.innerHTML = '<span style="color:var(--text-muted); font-size:0.8rem; font-style:italic;">Sin elementos vinculados</span>';
+                return;
+            }
+            container.innerHTML = items.map(i => `
+                <div class="tag-pill">
+                    ${i.nombre}
+                    <button onclick="removeRelation('${type}', ${i.id})">×</button>
                 </div>
             `).join('');
         }
 
-        function renderMap(prods) {
-            const container = document.getElementById("rel-viewer");
-            container.innerHTML = prods.map(p => `
-                <div class="card" style="padding: 1rem;">
-                    <div style="font-weight: 700; margin-bottom: 0.5rem;">${p.nombre}</div>
-                    <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
-                        ${p.marcas.map(m => `
-                            <div class="pill">${m.nombre}<button onclick="unlink(${p.id},${m.id})" style="background:transparent; color:#ef4444; width:auto; padding:0; height:auto;">×</button></div>
-                        `).join('') || '<span style="font-size:0.7rem; font-style:italic;">Sin marcas</span>'}
-                    </div>
-                </div>
-            `).join('');
+        async function addRelation(type) {
+            if (!curProdId) return;
+            const selectId = type === 'Categoria' ? 'sel-add-cat' : type === 'Unidad' ? 'sel-add-unit' : 'sel-add-marca';
+            const val = document.getElementById(selectId).value;
+            if (!val) return;
+
+            try {
+                await ApiService[`link${type}`](curProdId, val);
+                // Reload product state
+                const prods = await ApiService.getCatalogProductos();
+                allProds = prods;
+                loadProductState(curProdId);
+                document.getElementById(selectId).value = "";
+            } catch (e) {
+                alert("Error al vincular: " + e);
+            }
+        }
+
+        async function removeRelation(type, entityId) {
+            if (!curProdId) return;
+            if (!confirm("¿Desvincular este elemento?")) return;
+
+            try {
+                await ApiService[`unlink${type}`](curProdId, entityId);
+                // Reload product state
+                const prods = await ApiService.getCatalogProductos();
+                allProds = prods;
+                loadProductState(curProdId);
+            } catch (e) {
+                alert("Error al desvincular: " + e);
+            }
+        }
+
+        async function saveAllChanges() {
+            if (!curProdId) return;
+            const btn = document.getElementById("btn-save-all");
+            btn.disabled = true;
+            btn.innerHTML = '<i data-lucide="loader" style="width:20px; vertical-align:middle; animation: spin 1s linear infinite;"></i> Recargando...';
+
+            try {
+                const prods = await ApiService.getCatalogProductos();
+                allProds = prods;
+                await loadProductState(curProdId);
+                btn.innerHTML = '<i data-lucide="check-circle" style="width:20px; vertical-align:middle;"></i> ¡Guardado!';
+                setTimeout(() => {
+                    btn.innerHTML = '<i data-lucide="check-circle" style="width:20px; vertical-align:middle;"></i> Guardar Configuración Completa';
+                    btn.disabled = false;
+                    lucide.createIcons();
+                }, 2000);
+            } catch (e) {
+                alert("Error: " + e);
+                btn.disabled = false;
+            }
+            lucide.createIcons();
         }
 
         async function quickAdd(type, inputId) {
@@ -223,35 +628,10 @@
             init();
         }
 
-        async function createMasterProduct() {
-            const n = document.getElementById("p-name").value;
-            const c = document.getElementById("p-cat").value;
-            const u = document.getElementById("p-units").value;
-            if (!n) return;
-            await ApiService.createProducto(n, c, u);
-            init();
-        }
-
-        async function linkPM() {
-            await ApiService.linkProductoMarca(document.getElementById("rel-p").value, document.getElementById("rel-m").value);
-            init();
-        }
-
-        async function unlink(pId, mId) {
-            await ApiService.unlinkProductoMarca(pId, mId);
-            init();
-        }
-
         async function handleDel(id, method) {
-            if (!confirm("¿Eliminar?")) return;
+            if (!confirm("¿Eliminar definitivamente?")) return;
             await ApiService[method](id);
             init();
-        }
-
-        function filterP() {
-            const q = document.getElementById("p-search").value.toLowerCase();
-            const filtered = allProds.filter(p => p.nombre.toLowerCase().includes(q));
-            renderCatalog(filtered);
         }
 
         document.addEventListener("DOMContentLoaded", init);
