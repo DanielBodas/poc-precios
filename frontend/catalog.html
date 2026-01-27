@@ -433,6 +433,7 @@
         </div>
     </div>
 
+    <script src="js/utils.js"></script>
     <script src="config.js"></script>
     <script src="js/api.js"></script>
     <script src="js/components.js"></script>
@@ -467,7 +468,7 @@
 
                 // Populate selects for relations
                 const popSelect = (id, items) => {
-                    document.getElementById(id).innerHTML = '<option value="">Selecciona...</option>' + items.sort((a, b) => a.nombre.localeCompare(b.nombre)).map(x => `<option value="${x.id}">${x.nombre}</option>`).join('');
+                    document.getElementById(id).innerHTML = '<option value="">Selecciona...</option>' + items.sort((a, b) => a.nombre.localeCompare(b.nombre)).map(x => `<option value="${x.id}">${escapeHTML(x.nombre)}</option>`).join('');
                 };
                 popSelect('sel-prod-rel', prods);
                 popSelect('sel-add-cat', cats);
@@ -488,8 +489,8 @@
         function renderList(id, items, method) {
             const container = document.getElementById(id);
             container.innerHTML = items.sort((a, b) => a.nombre.localeCompare(b.nombre)).map(i => `
-                <div class="row-item" data-name="${i.nombre.toLowerCase()}">
-                    <span style="font-weight:600;">${i.nombre}</span>
+                <div class="row-item" data-name="${escapeHTML(i.nombre.toLowerCase())}">
+                    <span style="font-weight:600;">${escapeHTML(i.nombre)}</span>
                     <button onclick="handleDel(${i.id},'${method}')" style="background:transparent; color:#ef4444; width:auto; padding:0; box-shadow:none;"><i data-lucide="x-circle" style="width:16px;"></i></button>
                 </div>
             `).join('');
@@ -558,7 +559,7 @@
             }
             container.innerHTML = items.map(i => `
                 <div class="tag-pill">
-                    ${i.nombre}
+                    ${escapeHTML(i.nombre)}
                     <button onclick="removeRelation('${type}', ${i.id})">×</button>
                 </div>
             `).join('');
