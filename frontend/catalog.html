@@ -14,90 +14,6 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="css/main.css">
     <style>
-        :root {
-            --sidebar-w: 260px;
-        }
-
-        .admin-layout {
-            display: flex;
-            gap: 2rem;
-            margin-top: 1rem;
-            align-items: flex-start;
-        }
-
-        .admin-sidebar {
-            width: var(--sidebar-w);
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-            flex-shrink: 0;
-            position: sticky;
-            top: 90px;
-        }
-
-        .sidebar-group {
-            margin-bottom: 1.5rem;
-        }
-
-        .sidebar-label {
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            color: var(--text-muted);
-            font-weight: 800;
-            padding: 0 0 0.5rem 0;
-            display: block;
-            text-align: left;
-        }
-
-        .admin-content {
-            flex: 1;
-            min-width: 0;
-        }
-
-        .side-btn {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            padding: 0.75rem 1rem;
-            border-radius: 12px;
-            background: transparent;
-            border: none;
-            color: var(--text-muted);
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            text-align: left;
-            width: 100%;
-            font-size: 0.9rem;
-        }
-
-        .side-btn:hover {
-            background: rgba(99, 102, 241, 0.05);
-            color: var(--primary);
-        }
-
-        .side-btn.active {
-            background: white;
-            color: var(--primary);
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-            border: 1px solid rgba(99, 102, 241, 0.1);
-        }
-
-        .side-btn i {
-            width: 18px;
-            height: 18px;
-        }
-
-        .admin-section {
-            animation: fadeIn 0.3s ease-out;
-            display: none;
-        }
-
-        .admin-section.active {
-            display: block;
-        }
-
         .row-item {
             display: flex;
             justify-content: space-between;
@@ -107,6 +23,12 @@
             border-radius: 12px;
             margin-bottom: 0.5rem;
             border: 1px solid rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .row-item:hover {
+            transform: translateX(4px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
         }
 
         .search-box-mini {
@@ -128,18 +50,6 @@
             background: rgba(0, 0, 0, 0.01);
             border-radius: 10px;
             border: 1px dashed rgba(0, 0, 0, 0.1);
-        }
-
-        .tag-pill {
-            background: rgba(99, 102, 241, 0.08);
-            color: var(--primary);
-            padding: 0.4rem 0.85rem;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            gap: 8px;
         }
 
         .tag-pill button {
@@ -167,41 +77,57 @@
             border: 1px solid rgba(0, 0, 0, 0.05);
         }
 
-        .relation-block h4 {
-            font-size: 0.95rem;
-            margin-bottom: 1rem;
-            color: var(--text-dark);
-            font-weight: 700;
+        .admin-section {
+            display: none;
+            animation: fadeIn 0.3s ease-out;
         }
 
-        @media (max-width: 900px) {
-            .admin-layout {
-                flex-direction: column;
-            }
+        .admin-section.active {
+            display: block;
+        }
 
-            .admin-sidebar {
-                width: 100%;
-                position: static;
-                flex-direction: row;
-                flex-wrap: wrap;
-            }
+        .section-header {
+            margin-bottom: 2rem;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            padding-bottom: 1rem;
+        }
 
-            .sidebar-group {
-                margin-bottom: 1rem;
-                width: 100%;
-                display: flex;
-                flex-wrap: wrap;
-                gap: 0.5rem;
-            }
+        .section-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
 
-            .sidebar-label {
-                width: 100%;
-                margin-top: 0.5rem;
-            }
+        .section-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 16px;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            box-shadow: var(--shadow);
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
 
-            .side-btn {
-                width: auto;
-            }
+        .section-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
+            border-color: var(--primary);
+        }
+
+        .sc-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: rgba(99, 102, 241, 0.1);
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 0.5rem;
         }
 
         @keyframes fadeIn {
@@ -215,222 +141,207 @@
                 transform: translateY(0);
             }
         }
-
-        .save-btn {
-            background: linear-gradient(135deg, var(--primary), #818cf8);
-            color: white;
-            font-weight: 700;
-            padding: 1rem 2rem;
-            border-radius: 12px;
-            border: none;
-            cursor: pointer;
-            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
-            transition: all 0.2s;
-            width: 100%;
-            font-size: 1rem;
-        }
-
-        .save-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4);
-        }
-
-        .save-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
     </style>
 </head>
 
 <body>
-    <div class="container animate-in">
-        <header>
-            <h1 class="page-title">Sistema Maestro</h1>
-        </header>
+    <!-- components.js inserts Navbar & Sidebar -->
 
-        <div class="admin-layout">
-            <!-- Sidebar with Groups -->
-            <nav class="admin-sidebar">
+    <div class="layout-container no-widgets">
+        <main>
+            <div class="section-header">
+                <h1 class="page-title" style="margin-bottom: 0.5rem;">Gestión de Catálogo</h1>
+                <p style="color:var(--text-muted);">Administra las entidades del sistema y sus relaciones.</p>
+            </div>
 
-                <div class="sidebar-group">
-                    <span class="sidebar-label">Registro de Datos</span>
-                    <button class="side-btn active" onclick="showTab('reg-prods', this)">
-                        <i data-lucide="package-plus"></i> Productos
-                    </button>
-                    <button class="side-btn" onclick="showTab('reg-marcas', this)">
-                        <i data-lucide="award"></i> Marcas
-                    </button>
-                    <button class="side-btn" onclick="showTab('reg-supers', this)">
-                        <i data-lucide="store"></i> Supermercados
-                    </button>
-                    <button class="side-btn" onclick="showTab('reg-cats', this)">
-                        <i data-lucide="tag"></i> Categorías
-                    </button>
-                    <button class="side-btn" onclick="showTab('reg-units', this)">
-                        <i data-lucide="scale"></i> Unidades
-                    </button>
+            <!-- Dashboard View (Quick Access) -->
+            <div id="overview-dashboard" class="admin-section active">
+                <h3 style="margin-bottom: 1rem; font-size: 1.1rem; color: var(--text-main);">Entidades Principales</h3>
+                <div class="section-grid">
+                    <div class="section-card" onclick="showTab('reg-prods', document.getElementById('tab-prods'))">
+                        <div class="sc-icon"><i data-lucide="package"></i></div>
+                        <h4 style="font-weight: 700;">Productos</h4>
+                        <p style="font-size: 0.85rem; color: var(--text-muted);">Alta y baja de productos maestros.</p>
+                        <div class="badge badge-info" style="width:fit-content; margin-top:auto;" id="count-prods">--
+                            registros</div>
+                    </div>
+
+                    <div class="section-card" onclick="showTab('reg-marcas', document.getElementById('tab-marcas'))">
+                        <div class="sc-icon"><i data-lucide="award"></i></div>
+                        <h4 style="font-weight: 700;">Marcas</h4>
+                        <p style="font-size: 0.85rem; color: var(--text-muted);">Fabricantes y marcas.</p>
+                        <div class="badge badge-info" style="width:fit-content; margin-top:auto;" id="count-marcas">--
+                            registros</div>
+                    </div>
+
+                    <div class="section-card" onclick="showTab('reg-supers', document.getElementById('tab-supers'))">
+                        <div class="sc-icon"><i data-lucide="store"></i></div>
+                        <h4 style="font-weight: 700;">Supermercados</h4>
+                        <p style="font-size: 0.85rem; color: var(--text-muted);">Cadenas de establecimientos.</p>
+                        <div class="badge badge-info" style="width:fit-content; margin-top:auto;" id="count-supers">--
+                            registros</div>
+                    </div>
+
+                    <div class="section-card" onclick="showTab('reg-cats', document.getElementById('tab-cats'))">
+                        <div class="sc-icon"><i data-lucide="tag"></i></div>
+                        <h4 style="font-weight: 700;">Categorías</h4>
+                        <p style="font-size: 0.85rem; color: var(--text-muted);">Etiquetas de clasificación.</p>
+                        <div class="badge badge-info" style="width:fit-content; margin-top:auto;" id="count-cats">--
+                            registros</div>
+                    </div>
                 </div>
 
-                <div class="sidebar-group">
-                    <span class="sidebar-label">Mapeo y Relaciones</span>
-                    <button class="side-btn" onclick="showTab('rel-main', this)">
-                        <i data-lucide="link-2"></i> Vincular Propiedades
-                    </button>
+                <h3 style="margin-bottom: 1rem; font-size: 1.1rem; color: var(--text-main);">Configuración Avanzada</h3>
+                <div class="section-grid">
+                    <div class="section-card" onclick="showTab('rel-main', document.getElementById('tab-rels'))">
+                        <div class="sc-icon"><i data-lucide="link-2"></i></div>
+                        <h4 style="font-weight: 700;">Mapeo de Relaciones</h4>
+                        <p style="font-size: 0.85rem; color: var(--text-muted);">Vincula marcas y unidades a productos
+                            específicos.</p>
+                    </div>
+                    <div class="section-card" onclick="showTab('reg-units', document.getElementById('tab-units'))">
+                        <div class="sc-icon"><i data-lucide="scale"></i></div>
+                        <h4 style="font-weight: 700;">Unidades de Medida</h4>
+                        <p style="font-size: 0.85rem; color: var(--text-muted);">Configuración de unidades (kg, g, L..).
+                        </p>
+                    </div>
                 </div>
-            </nav>
+            </div>
 
-            <!-- Content Area -->
-            <main class="admin-content">
+            <!-- Internal Navigation (Hidden initially, shown when not in dashboard) -->
+            <div id="internal-nav" class="sub-nav-tabs" style="display:none;">
+                <button class="tab-btn" onclick="showOverview()">
+                    <i data-lucide="layout-grid" style="width: 16px;"></i> Vista General
+                </button>
+                <div style="width: 1px; background: rgba(0,0,0,0.1); margin: 0 0.5rem;"></div>
+                <button id="tab-prods" class="tab-btn" onclick="showTab('reg-prods', this)">Productos</button>
+                <button id="tab-marcas" class="tab-btn" onclick="showTab('reg-marcas', this)">Marcas</button>
+                <button id="tab-supers" class="tab-btn" onclick="showTab('reg-supers', this)">Supermercados</button>
+                <button id="tab-cats" class="tab-btn" onclick="showTab('reg-cats', this)">Categorías</button>
+                <button id="tab-units" class="tab-btn" onclick="showTab('reg-units', this)">Unidades</button>
+                <button id="tab-rels" class="tab-btn" onclick="showTab('rel-main', this)">Relaciones</button>
+            </div>
 
-                <!-- REGISTRO: PRODUCTOS -->
-                <section id="reg-prods" class="admin-section active">
-                    <div class="card">
-                        <h2 style="font-size: 1.2rem; margin-bottom: 1rem;">Alta de Productos Maestros</h2>
-                        <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
-                            <input id="in-prod-name" type="text" placeholder="Nombre (ej: Manzanas Fuji)"
-                                onkeyup="checkFast(this.value)">
-                            <button onclick="addProdMaster()" style="width: auto; padding: 0 1.5rem;">Registrar</button>
-                        </div>
-                        <div id="fast-alert"
-                            style="color:var(--primary); font-size:0.8rem; margin-bottom:1rem; display:none; font-weight:700;">
-                            ⚠️ Nota: Ya existe un producto con este nombre o similar.
-                        </div>
-                        <h3 style="font-size: 0.9rem; margin-top: 2rem; margin-bottom: 1rem;">Catálogo registrado</h3>
-                        <input type="text" class="search-box-mini" placeholder="🔍 Buscar..."
-                            onkeyup="filterList('catalog-list', this.value)">
-                        <div id="catalog-list" style="max-height: 400px; overflow-y: auto;"></div>
+            <!-- SECTIONS (Same logic, slightly cleaner headers) -->
+
+            <section id="reg-prods" class="admin-section">
+                <div class="card">
+                    <h2 style="font-size: 1.2rem; margin-bottom: 1rem;">Gestión de Productos</h2>
+                    <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+                        <input id="in-prod-name" type="text" placeholder="Nombre (ej: Manzanas Fuji)"
+                            onkeyup="checkFast(this.value)">
+                        <button onclick="addProdMaster()" style="width: auto; padding: 0 1.5rem;">Registrar</button>
                     </div>
-                </section>
-
-                <!-- REGISTRO: MARCAS -->
-                <section id="reg-marcas" class="admin-section">
-                    <div class="card">
-                        <h2 style="font-size: 1.2rem; margin-bottom: 1rem;">Registro de Marcas</h2>
-                        <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem;">
-                            <input id="in-marca" type="text" placeholder="Ej: Nestlé">
-                            <button onclick="quickAdd('Marca','in-marca')"
-                                style="width: auto; padding: 0 1.5rem;">Añadir</button>
-                        </div>
-                        <div id="list-marcas" style="max-height: 500px; overflow-y: auto; column-count: 2;"></div>
+                    <div id="fast-alert"
+                        style="color:var(--primary); font-size:0.8rem; margin-bottom:1rem; display:none; font-weight:700;">
+                        ⚠️ Nota: Ya existe un producto con este nombre o similar.
                     </div>
-                </section>
+                    <input type="text" class="search-box-mini" placeholder="🔍 Buscar en catálogo..."
+                        onkeyup="filterList('catalog-list', this.value)">
+                    <div id="catalog-list" style="max-height: 400px; overflow-y: auto;"></div>
+                </div>
+            </section>
 
-                <!-- REGISTRO: SUPERS -->
-                <section id="reg-supers" class="admin-section">
-                    <div class="card">
-                        <h2 style="font-size: 1.2rem; margin-bottom: 1rem;">Registro de Supermercados</h2>
-                        <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem;">
-                            <input id="in-super" type="text" placeholder="Ej: Mercadona">
-                            <button onclick="quickAdd('Supermercado','in-super')"
-                                style="width: auto; padding: 0 1.5rem;">Añadir</button>
-                        </div>
-                        <div id="list-supers" style="max-height: 500px; overflow-y: auto;"></div>
+            <section id="reg-marcas" class="admin-section">
+                <div class="card">
+                    <h2 style="font-size: 1.2rem; margin-bottom: 1rem;">Marcas Registradas</h2>
+                    <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem;">
+                        <input id="in-marca" type="text" placeholder="Ej: Nestlé">
+                        <button onclick="quickAdd('Marca','in-marca')"
+                            style="width: auto; padding: 0 1.5rem;">Añadir</button>
                     </div>
-                </section>
+                    <div id="list-marcas" style="max-height: 500px; overflow-y: auto; column-count: 2;"></div>
+                </div>
+            </section>
 
-                <!-- REGISTRO: CATEGORIAS -->
-                <section id="reg-cats" class="admin-section">
-                    <div class="card">
-                        <h2 style="font-size: 1.2rem; margin-bottom: 1rem;">Registro de Categorías</h2>
-                        <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem;">
-                            <input id="in-cat" type="text" placeholder="Ej: Lácteos">
-                            <button onclick="quickAdd('Categoria','in-cat')"
-                                style="width: auto; padding: 0 1.5rem;">Añadir</button>
-                        </div>
-                        <div id="list-cats" style="max-height: 500px; overflow-y: auto;"></div>
+            <section id="reg-supers" class="admin-section">
+                <div class="card">
+                    <h2 style="font-size: 1.2rem; margin-bottom: 1rem;">Supermercados</h2>
+                    <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem;">
+                        <input id="in-super" type="text" placeholder="Ej: Mercadona">
+                        <button onclick="quickAdd('Supermercado','in-super')"
+                            style="width: auto; padding: 0 1.5rem;">Añadir</button>
                     </div>
-                </section>
+                    <div id="list-supers" style="max-height: 500px; overflow-y: auto;"></div>
+                </div>
+            </section>
 
-                <!-- REGISTRO: UNIDADES -->
-                <section id="reg-units" class="admin-section">
-                    <div class="card">
-                        <h2 style="font-size: 1.2rem; margin-bottom: 1rem;">Registro de Unidades</h2>
-                        <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem;">
-                            <input id="in-unit" type="text" placeholder="Ej: kg, g, L, ud">
-                            <button onclick="quickAdd('Unidad','in-unit')"
-                                style="width: auto; padding: 0 1.5rem;">Añadir</button>
-                        </div>
-                        <div id="list-units" style="max-height: 500px; overflow-y: auto;"></div>
+            <section id="reg-cats" class="admin-section">
+                <div class="card">
+                    <h2 style="font-size: 1.2rem; margin-bottom: 1rem;">Categorías</h2>
+                    <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem;">
+                        <input id="in-cat" type="text" placeholder="Ej: Lácteos">
+                        <button onclick="quickAdd('Categoria','in-cat')"
+                            style="width: auto; padding: 0 1.5rem;">Añadir</button>
                     </div>
-                </section>
+                    <div id="list-cats" style="max-height: 500px; overflow-y: auto;"></div>
+                </div>
+            </section>
 
-                <!-- RELACIONES: GESTOR -->
-                <section id="rel-main" class="admin-section">
-                    <div class="card" style="margin-bottom: 2rem;">
-                        <h2 style="font-size: 1.3rem; margin-bottom: 1.5rem;">Gestor de Relaciones</h2>
-                        <div style="margin-bottom: 2rem;">
-                            <label style="font-weight: 700; margin-bottom: 0.5rem; display: block;">Selecciona el
-                                Producto a Configurar</label>
-                            <input type="text" class="search-box-mini" placeholder="🔍 Filtrar productos..."
-                                onkeyup="filterSelect('sel-prod-rel', this.value)">
-                            <select id="sel-prod-rel" style="margin-top: 0.5rem;"
-                                onchange="loadProductState(this.value)">
-                                <option value="">Elige un producto...</option>
-                            </select>
-                        </div>
+            <section id="reg-units" class="admin-section">
+                <div class="card">
+                    <h2 style="font-size: 1.2rem; margin-bottom: 1rem;">Unidades de Medida</h2>
+                    <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem;">
+                        <input id="in-unit" type="text" placeholder="Ej: kg, g, L, ud">
+                        <button onclick="quickAdd('Unidad','in-unit')"
+                            style="width: auto; padding: 0 1.5rem;">Añadir</button>
+                    </div>
+                    <div id="list-units" style="max-height: 500px; overflow-y: auto;"></div>
+                </div>
+            </section>
 
-                        <div id="mapping-controls" style="display: none;">
+            <section id="rel-main" class="admin-section">
+                <div class="card">
+                    <h2 style="font-size: 1.3rem; margin-bottom: 1.5rem;">Gestor de Relaciones</h2>
+                    <p style="color:var(--text-muted); margin-bottom:1.5rem;">Define qué marcas y unidades son válidas
+                        para cada producto.</p>
 
-                            <!-- CATEGORIAS -->
-                            <div class="relation-block">
-                                <h4><i data-lucide="tag" style="width:16px; vertical-align:middle;"></i> Categorías /
-                                    Tags</h4>
-                                <div style="display: flex; gap: 0.5rem; margin-bottom: 0.75rem;">
-                                    <select id="sel-add-cat" style="flex: 1;"></select>
-                                    <button onclick="addRelation('Categoria')"
-                                        style="background:var(--success); width: auto; padding: 0 1.5rem;">
-                                        <i data-lucide="plus" style="width:14px;"></i> Vincular
-                                    </button>
-                                </div>
-                                <div id="cur-cats" class="tag-list"></div>
+                    <div style="margin-bottom: 2rem;">
+                        <label style="font-weight: 700; margin-bottom: 0.5rem; display: block;">Selecciona
+                            Producto</label>
+                        <input type="text" class="search-box-mini" placeholder="🔍 Filtrar lista..."
+                            onkeyup="filterSelect('sel-prod-rel', this.value)">
+                        <select id="sel-prod-rel" style="margin-top: 0.5rem;" onchange="loadProductState(this.value)">
+                            <option value="">Elige un producto...</option>
+                        </select>
+                    </div>
+
+                    <div id="mapping-controls" style="display: none;">
+                        <div class="relation-block">
+                            <h4><i data-lucide="tag" style="width:16px; vertical-align:middle;"></i> Categorías</h4>
+                            <div style="display: flex; gap: 0.5rem; margin-bottom: 0.75rem;">
+                                <select id="sel-add-cat" style="flex: 1;"></select>
+                                <button onclick="addRelation('Categoria')"
+                                    style="background:var(--success); width: auto; padding: 0 1.5rem;">+</button>
                             </div>
+                            <div id="cur-cats" class="tag-list"></div>
+                        </div>
 
-                            <!-- UNIDADES -->
-                            <div class="relation-block">
-                                <h4><i data-lucide="scale" style="width:16px; vertical-align:middle;"></i> Unidades de
-                                    Venta</h4>
-                                <div style="display: flex; gap: 0.5rem; margin-bottom: 0.75rem;">
-                                    <select id="sel-add-unit" style="flex: 1;"></select>
-                                    <button onclick="addRelation('Unidad')"
-                                        style="background:var(--success); width: auto; padding: 0 1.5rem;">
-                                        <i data-lucide="plus" style="width:14px;"></i> Vincular
-                                    </button>
-                                </div>
-                                <div id="cur-units" class="tag-list"></div>
+                        <div class="relation-block">
+                            <h4><i data-lucide="scale" style="width:16px; vertical-align:middle;"></i> Unidades
+                                Permitidas</h4>
+                            <div style="display: flex; gap: 0.5rem; margin-bottom: 0.75rem;">
+                                <select id="sel-add-unit" style="flex: 1;"></select>
+                                <button onclick="addRelation('Unidad')"
+                                    style="background:var(--success); width: auto; padding: 0 1.5rem;">+</button>
                             </div>
+                            <div id="cur-units" class="tag-list"></div>
+                        </div>
 
-                            <!-- MARCAS -->
-                            <div class="relation-block">
-                                <h4><i data-lucide="award" style="width:16px; vertical-align:middle;"></i> Marcas
-                                    Disponibles</h4>
-                                <div style="display: flex; gap: 0.5rem; margin-bottom: 0.75rem;">
-                                    <select id="sel-add-marca" style="flex: 1;"></select>
-                                    <button onclick="addRelation('Marca')"
-                                        style="background:var(--success); width: auto; padding: 0 1.5rem;">
-                                        <i data-lucide="plus" style="width:14px;"></i> Vincular
-                                    </button>
-                                </div>
-                                <div id="cur-marcas" class="tag-list"></div>
+                        <div class="relation-block">
+                            <h4><i data-lucide="award" style="width:16px; vertical-align:middle;"></i> Marcas
+                                Disponibles</h4>
+                            <div style="display: flex; gap: 0.5rem; margin-bottom: 0.75rem;">
+                                <select id="sel-add-marca" style="flex: 1;"></select>
+                                <button onclick="addRelation('Marca')"
+                                    style="background:var(--success); width: auto; padding: 0 1.5rem;">+</button>
                             </div>
-
-                            <!-- GUARDAR TODO -->
-                            <div style="margin-top: 2rem; padding-top: 2rem; border-top: 2px solid #f1f5f9;">
-                                <button onclick="saveAllChanges()" class="save-btn" id="btn-save-all">
-                                    <i data-lucide="check-circle" style="width:20px; vertical-align:middle;"></i>
-                                    Guardar Configuración Completa
-                                </button>
-                                <p
-                                    style="text-align: center; margin-top: 1rem; font-size: 0.8rem; color: var(--text-muted);">
-                                    Los cambios se guardan automáticamente al vincular/desvincular. Este botón recarga
-                                    el producto.
-                                </p>
-                            </div>
+                            <div id="cur-marcas" class="tag-list"></div>
                         </div>
                     </div>
-                </section>
-
-            </main>
-        </div>
+                </div>
+            </section>
+        </main>
     </div>
 
     <script src="config.js"></script>
@@ -438,9 +349,6 @@
     <script src="js/components.js"></script>
     <script>
         let allProds = [];
-        let allCats = [];
-        let allMarcas = [];
-        let allUnits = [];
         let curProdId = null;
 
         async function init() {
@@ -454,20 +362,23 @@
                 ]);
 
                 allProds = prods;
-                allCats = cats;
-                allMarcas = marcas;
-                allUnits = units;
 
-                // Lists registry
+                // Dashboard stats
+                document.getElementById('count-prods').textContent = `${prods.length} registros`;
+                document.getElementById('count-marcas').textContent = `${marcas.length} registros`;
+                document.getElementById('count-supers').textContent = `${supers.length} registros`;
+                document.getElementById('count-cats').textContent = `${cats.length} registros`;
+
+                // Lists
                 renderList("catalog-list", prods, 'deleteProducto');
                 renderList("list-marcas", marcas, 'deleteMarca');
                 renderList("list-supers", supers, 'deleteSupermercado');
                 renderList("list-cats", cats, 'deleteCategoria');
                 renderList("list-units", units, 'deleteUnidad');
 
-                // Populate selects for relations
                 const popSelect = (id, items) => {
-                    document.getElementById(id).innerHTML = '<option value="">Selecciona...</option>' + items.sort((a, b) => a.nombre.localeCompare(b.nombre)).map(x => `<option value="${x.id}">${x.nombre}</option>`).join('');
+                    const el = document.getElementById(id);
+                    if (el) el.innerHTML = '<option value="">Selecciona...</option>' + items.sort((a, b) => a.nombre.localeCompare(b.nombre)).map(x => `<option value="${x.id}">${x.nombre}</option>`).join('');
                 };
                 popSelect('sel-prod-rel', prods);
                 popSelect('sel-add-cat', cats);
@@ -478,22 +389,33 @@
             } catch (e) { console.error(e); }
         }
 
+        function showOverview() {
+            document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
+            document.getElementById('overview-dashboard').classList.add('active');
+            document.getElementById('internal-nav').style.display = 'none';
+        }
+
         function showTab(id, btn) {
             document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
-            document.querySelectorAll('.side-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+
             document.getElementById(id).classList.add('active');
-            btn.classList.add('active');
+            if (btn) btn.classList.add('active');
+
+            // Show nav if not visible
+            document.getElementById('internal-nav').style.display = 'flex';
         }
 
         function renderList(id, items, method) {
             const container = document.getElementById(id);
+            if (!container) return;
             container.innerHTML = items.sort((a, b) => a.nombre.localeCompare(b.nombre)).map(i => `
                 <div class="row-item" data-name="${i.nombre.toLowerCase()}">
                     <span style="font-weight:600;">${i.nombre}</span>
                     <button onclick="handleDel(${i.id},'${method}')" style="background:transparent; color:#ef4444; width:auto; padding:0; box-shadow:none;"><i data-lucide="x-circle" style="width:16px;"></i></button>
                 </div>
             `).join('');
-            lucide.createIcons();
+            if (window.lucide) lucide.createIcons();
         }
 
         function filterList(id, q) {
@@ -520,21 +442,13 @@
 
         async function addProdMaster() {
             const n = document.getElementById("in-prod-name").value.trim();
-            if (!n) {
-                alert("El nombre del producto es obligatorio");
-                return;
-            }
-
+            if (!n) return alert("Nombre obligatorio");
             try {
                 await ApiService.createProducto(n, [], [], []);
                 document.getElementById("in-prod-name").value = "";
                 document.getElementById("fast-alert").style.display = 'none';
                 await init();
-                alert("✓ Producto registrado correctamente");
-            } catch (e) {
-                console.error("Error al crear producto:", e);
-                alert("Error al crear el producto. Revisa la consola para más detalles.");
-            }
+            } catch (e) { console.error(e); alert("Error"); }
         }
 
         async function loadProductState(pid) {
@@ -572,52 +486,22 @@
 
             try {
                 await ApiService[`link${type}`](curProdId, val);
-                // Reload product state
                 const prods = await ApiService.getCatalogProductos();
                 allProds = prods;
                 loadProductState(curProdId);
                 document.getElementById(selectId).value = "";
-            } catch (e) {
-                alert("Error al vincular: " + e);
-            }
+            } catch (e) { alert("Error: " + e); }
         }
 
         async function removeRelation(type, entityId) {
             if (!curProdId) return;
-            if (!confirm("¿Desvincular este elemento?")) return;
-
+            if (!confirm("¿Desvincular?")) return;
             try {
                 await ApiService[`unlink${type}`](curProdId, entityId);
-                // Reload product state
                 const prods = await ApiService.getCatalogProductos();
                 allProds = prods;
                 loadProductState(curProdId);
-            } catch (e) {
-                alert("Error al desvincular: " + e);
-            }
-        }
-
-        async function saveAllChanges() {
-            if (!curProdId) return;
-            const btn = document.getElementById("btn-save-all");
-            btn.disabled = true;
-            btn.innerHTML = '<i data-lucide="loader" style="width:20px; vertical-align:middle; animation: spin 1s linear infinite;"></i> Recargando...';
-
-            try {
-                const prods = await ApiService.getCatalogProductos();
-                allProds = prods;
-                await loadProductState(curProdId);
-                btn.innerHTML = '<i data-lucide="check-circle" style="width:20px; vertical-align:middle;"></i> ¡Guardado!';
-                setTimeout(() => {
-                    btn.innerHTML = '<i data-lucide="check-circle" style="width:20px; vertical-align:middle;"></i> Guardar Configuración Completa';
-                    btn.disabled = false;
-                    lucide.createIcons();
-                }, 2000);
-            } catch (e) {
-                alert("Error: " + e);
-                btn.disabled = false;
-            }
-            lucide.createIcons();
+            } catch (e) { alert("Error: " + e); }
         }
 
         async function quickAdd(type, inputId) {

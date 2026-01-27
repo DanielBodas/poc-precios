@@ -14,10 +14,11 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="css/main.css">
+    <!-- Ensure CSS is loaded before JS runs -->
     <style>
         .kpi-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
             gap: 1rem;
             margin-bottom: 2rem;
         }
@@ -52,6 +53,7 @@
             border-radius: var(--radius);
             margin-bottom: 1.5rem;
             box-shadow: var(--shadow);
+            border: 1px solid rgba(0, 0, 0, 0.05);
         }
 
         .chart-wrapper {
@@ -61,7 +63,7 @@
 
         .super-stats {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
             gap: 1rem;
             margin-bottom: 2rem;
         }
@@ -72,15 +74,6 @@
             border-radius: 12px;
             border: 1px solid rgba(0, 0, 0, 0.05);
             box-shadow: var(--shadow);
-        }
-
-        .super-card h4 {
-            font-size: 0.95rem;
-            font-weight: 700;
-            margin-bottom: 0.75rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
         }
 
         .stat-row {
@@ -95,143 +88,97 @@
             border-bottom: none;
         }
 
-        .stat-label {
-            color: var(--text-muted);
-        }
-
-        .stat-value {
-            font-weight: 700;
-            color: var(--text-dark);
-        }
-
-        .winner-badge {
-            background: linear-gradient(135deg, #22c55e, #16a34a);
-            color: white;
-            padding: 0.25rem 0.75rem;
-            border-radius: 20px;
-            font-size: 0.7rem;
-            font-weight: 700;
-            display: inline-block;
-        }
-
-        .history-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.85rem;
-        }
-
-        .history-table th,
-        .history-table td {
-            padding: 0.85rem 0.5rem;
-            text-align: left;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.03);
-        }
-
-        .history-table th {
-            font-size: 0.65rem;
-            text-transform: uppercase;
-            color: var(--text-muted);
-        }
-
         .trend-up {
             color: #ef4444;
+            font-weight: 600;
         }
 
         .trend-down {
             color: #22c55e;
+            font-weight: 600;
+        }
+
+        .win-badge {
+            background: #22c55e;
+            color: white;
+            font-size: 0.7rem;
+            padding: 0.1rem 0.5rem;
+            border-radius: 10px;
         }
     </style>
 </head>
 
 <body>
-    <div class="container animate-in">
-        <header>
+    <!-- components.js inserts Navbar & Sidebar -->
+    <!-- Explicitly ensuring this container exists for components.js -->
+    <div class="layout-container no-widgets">
+        <main>
             <h1 class="page-title">Análisis Comparativo</h1>
-            <div class="card" style="padding: 1rem; margin-bottom: 2rem;">
-                <label>¿Qué producto quieres analizar?</label>
-                <input type="text" id="p-search-compare" placeholder="🔍 Filtrar producto..."
-                    onkeyup="filterProducts(this.value)"
-                    style="margin-bottom:0.5rem; padding:0.75rem; border-radius:10px; border:1px solid rgba(0,0,0,0.1); width:100%;">
-                <select id="select-doc-compare" style="margin-top: 0.5rem;">
-                    <option value="">Cargando...</option>
-                </select>
-            </div>
-        </header>
 
-        <main id="analysis-content" style="display: none;">
-            <!-- KPIs Globales -->
-            <div class="kpi-grid">
-                <div class="kpi-card">
-                    <div class="kpi-label">Último Precio</div>
-                    <div id="kpi-last" class="kpi-value">--</div>
-                    <div id="kpi-last-store"
-                        style="font-size: 0.7rem; color: var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-                        --</div>
-                </div>
-                <div class="kpi-card">
-                    <div class="kpi-label">Precio Medio</div>
-                    <div id="kpi-avg" class="kpi-value">--</div>
-                    <div id="kpi-vs-avg" style="font-size: 0.7rem; font-weight: 700;">--</div>
-                </div>
-                <div class="kpi-card">
-                    <div class="kpi-label">Mejor Precio</div>
-                    <div id="kpi-min" class="kpi-value" style="color: var(--success);">--</div>
-                    <div id="kpi-min-store"
-                        style="font-size: 0.7rem; color: var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-                        --</div>
-                </div>
-                <div class="kpi-card">
-                    <div class="kpi-label">Registros</div>
-                    <div id="kpi-count" class="kpi-value" style="color: var(--primary);">--</div>
-                    <div style="font-size: 0.7rem; color: var(--text-muted);">Total de precios</div>
+            <div class="card"
+                style="padding: 1.5rem; margin-bottom: 2rem; display: flex; gap: 1rem; align-items:center; flex-wrap:wrap;">
+                <div style="flex:1;">
+                    <label style="margin-bottom: 0.5rem; display:block;">Selecciona un producto para analizar:</label>
+                    <select id="select-doc-compare">
+                        <option value="">Cargando catálogo...</option>
+                    </select>
                 </div>
             </div>
 
-            <!-- Gráfico Comparativo por Supermercado -->
-            <div class="chart-container">
-                <h3 style="margin-bottom: 1rem; font-size: 1.1rem;">
-                    <i data-lucide="trending-up" style="width:18px; vertical-align:middle;"></i>
-                    Evolución de Precios por Supermercado
+            <div id="analysis-content" style="display: none;">
+                <!-- KPIs Globales -->
+                <div class="kpi-grid">
+                    <div class="kpi-card">
+                        <div class="kpi-label">Último Precio</div>
+                        <div id="kpi-last" class="kpi-value">--</div>
+                        <div id="kpi-last-store" style="font-size: 0.7rem; color: var(--text-muted);">--</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label">Mejor Precio</div>
+                        <div id="kpi-min" class="kpi-value" style="color: var(--success);">--</div>
+                        <div id="kpi-min-store" style="font-size: 0.7rem; color: var(--text-muted);">--</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label">Precio Medio</div>
+                        <div id="kpi-avg" class="kpi-value">--</div>
+                        <div id="kpi-vs-avg" style="font-size: 0.7rem;">--</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label">Registros</div>
+                        <div id="kpi-count" class="kpi-value" style="color: var(--primary);">--</div>
+                        <div style="font-size: 0.7rem; color: var(--text-muted);">Total samples</div>
+                    </div>
+                </div>
+
+                <!-- Gráfico Comparativo por Supermercado -->
+                <div class="chart-container">
+                    <h3 style="margin-bottom: 1rem; font-size: 1.1rem; color: var(--text-main);">
+                        <i data-lucide="trending-up"
+                            style="width:18px; vertical-align:middle; color:var(--primary);"></i>
+                        Evolución de Precios
+                    </h3>
+                    <div class="chart-wrapper">
+                        <canvas id="priceChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Estadísticas por Supermercado -->
+                <h3 style="margin-bottom: 1rem; font-size: 1.1rem; color: var(--text-main);">
+                    <i data-lucide="store" style="width:18px; vertical-align:middle; color:var(--primary);"></i>
+                    Comparativa por Supermercado
                 </h3>
-                <div class="chart-wrapper">
-                    <canvas id="priceChart"></canvas>
-                </div>
+                <div id="super-stats" class="super-stats"></div>
             </div>
 
-            <!-- Estadísticas por Supermercado -->
-            <h3 style="margin-bottom: 1rem; font-size: 1.1rem;">
-                <i data-lucide="bar-chart-3" style="width:18px; vertical-align:middle;"></i>
-                Comparativa por Establecimiento
-            </h3>
-            <div id="super-stats" class="super-stats"></div>
-
-            <!-- Tabla de Historial Completo -->
-            <section class="card">
-                <h3 style="margin-bottom: 1rem;">Historial Detallado</h3>
-                <div style="overflow-x: auto;">
-                    <table class="history-table">
-                        <thead>
-                            <tr>
-                                <th>📅 Fecha</th>
-                                <th>Precio/Unidad</th>
-                                <th>Supermercado</th>
-                                <th>Marca</th>
-                                <th>Cantidad</th>
-                                <th>Oferta</th>
-                            </tr>
-                        </thead>
-                        <tbody id="history-body"></tbody>
-                    </table>
-                </div>
-            </section>
+            <div id="empty-state-search" class="empty-state">
+                <i data-lucide="bar-chart-big"
+                    style="width: 48px; height: 48px; margin-bottom: 1rem; opacity: 0.2;"></i>
+                <p>Selecciona un producto arriba para ver el informe detallado.</p>
+            </div>
         </main>
-
-        <div id="empty-state-search" class="empty-state">
-            <i data-lucide="line-chart" style="width: 48px; height: 48px; margin-bottom: 1rem; opacity: 0.2;"></i>
-            <p>Elige un producto para ver su evolución y comparativa.</p>
-        </div>
     </div>
 
+    <!-- Move Scripts to end of body -->
     <script src="config.js"></script>
     <script src="js/api.js"></script>
     <script src="js/components.js"></script>
@@ -240,26 +187,21 @@
         let allProducts = [];
 
         async function init() {
-            const p = await ApiService.getCatalogProductos();
-            allProducts = p.sort((a, b) => a.nombre.localeCompare(b.nombre));
+            try {
+                const p = await ApiService.getCatalogProductos();
+                allProducts = p.sort((a, b) => a.nombre.localeCompare(b.nombre));
 
-            updateSelect(allProducts);
+                updateSelect(allProducts);
 
-            const s = document.getElementById("select-doc-compare");
-            s.onchange = (e) => load(e.target.value);
+                const s = document.getElementById("select-doc-compare");
+                s.onchange = (e) => load(e.target.value);
+            } catch (e) { console.error("Compare Init Error:", e); }
         }
 
         function updateSelect(filtered) {
             const s = document.getElementById("select-doc-compare");
-            const current = s.value;
+            if (!s) return;
             s.innerHTML = '<option value="">Elige un producto...</option>' + filtered.map(x => `<option value="${x.id}">${x.nombre}</option>`).join('');
-            if (filtered.find(x => x.id == current)) s.value = current;
-        }
-
-        function filterProducts(q) {
-            const lowerQ = q.toLowerCase();
-            const filtered = allProducts.filter(p => p.nombre.toLowerCase().includes(lowerQ));
-            updateSelect(filtered);
         }
 
         async function load(id) {
@@ -272,7 +214,7 @@
             document.getElementById('empty-state-search').style.display = 'none';
 
             const h = await ApiService.getPrecioHistorial(id);
-            if (h.length === 0) {
+            if (!h || h.length === 0) {
                 alert("No hay datos históricos para este producto");
                 return;
             }
@@ -280,11 +222,11 @@
             renderKPIs(h);
             renderChartBySupermarket(h);
             renderSuperStats(h);
-            renderTable(h);
-            lucide.createIcons();
+            if (window.lucide) lucide.createIcons();
         }
 
         function renderKPIs(h) {
+            // ... same logic ...
             const prices = h.map(x => x.precio_unidad);
             const last = h[0];
             const min = Math.min(...prices);
@@ -309,7 +251,6 @@
             const ctx = document.getElementById('priceChart').getContext('2d');
             const d = [...h].reverse();
 
-            // Group by supermarket
             const supermarkets = [...new Set(d.map(x => x.supermercado))];
             const colors = ['#6366f1', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
 
@@ -319,12 +260,10 @@
                     label: super_name,
                     data: data,
                     borderColor: colors[idx % colors.length],
-                    backgroundColor: colors[idx % colors.length] + '20',
-                    fill: false,
+                    backgroundColor: colors[idx % colors.length],
                     tension: 0.3,
                     spanGaps: true,
                     pointRadius: 4,
-                    pointHoverRadius: 6
                 };
             });
 
@@ -339,23 +278,12 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: {
-                            display: true,
-                            position: 'top'
-                        },
-                        tooltip: {
-                            mode: 'index',
-                            intersect: false
-                        }
+                        legend: { position: 'top' },
+                        tooltip: { mode: 'index', intersect: false }
                     },
                     scales: {
                         y: {
-                            beginAtZero: false,
-                            ticks: {
-                                callback: function (value) {
-                                    return value.toFixed(2) + '€';
-                                }
-                            }
+                            ticks: { callback: function (value) { return value.toFixed(2) + '€'; } }
                         }
                     }
                 }
@@ -364,17 +292,11 @@
 
         function renderSuperStats(h) {
             const container = document.getElementById('super-stats');
-
-            // Group by supermarket
             const bySupermarket = {};
             h.forEach(p => {
-                if (!bySupermarket[p.supermercado]) {
-                    bySupermarket[p.supermercado] = [];
-                }
+                if (!bySupermarket[p.supermercado]) bySupermarket[p.supermercado] = [];
                 bySupermarket[p.supermercado].push(p);
             });
-
-            // Calculate stats for each
             const stats = Object.entries(bySupermarket).map(([name, prices]) => {
                 const values = prices.map(p => p.precio_unidad);
                 return {
@@ -386,55 +308,28 @@
                     last: prices[0].precio_unidad
                 };
             });
-
-            // Find winner (lowest average)
             const winner = stats.reduce((min, s) => s.avg < min.avg ? s : min, stats[0]);
-
             const fmt = (v) => v.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 3 }) + '€';
 
             container.innerHTML = stats.sort((a, b) => a.avg - b.avg).map(s => `
                 <div class="super-card">
-                    <h4>
-                        <i data-lucide="store" style="width:16px;"></i>
+                    <h4 style="font-weight:700; margin-bottom:0.8rem; display:flex; align-items:center; gap:0.5rem; color:var(--text-main);">
                         ${s.name}
-                        ${s.name === winner.name ? '<span class="winner-badge">Mejor Media</span>' : ''}
+                        ${s.name === winner.name ? '<span class="win-badge">🏆 Mejor Opción</span>' : ''}
                     </h4>
                     <div class="stat-row">
-                        <span class="stat-label">Precio Medio</span>
-                        <span class="stat-value" style="color:var(--primary);">${fmt(s.avg)}</span>
+                        <span style="color:var(--text-muted);">Precio Medio</span>
+                        <span style="font-weight:700;">${fmt(s.avg)}</span>
                     </div>
                     <div class="stat-row">
-                        <span class="stat-label">Mínimo Histórico</span>
-                        <span class="stat-value" style="color:var(--success);">${fmt(s.min)}</span>
+                        <span style="color:var(--text-muted);">Mínimo</span>
+                        <span style="color:var(--success); font-weight:700;">${fmt(s.min)}</span>
                     </div>
                     <div class="stat-row">
-                        <span class="stat-label">Máximo Histórico</span>
-                        <span class="stat-value" style="color:var(--danger);">${fmt(s.max)}</span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="stat-label">Último Precio</span>
-                        <span class="stat-value">${fmt(s.last)}</span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="stat-label">Registros</span>
-                        <span class="stat-value">${s.count}</span>
+                        <span style="color:var(--text-muted);">Máximo</span>
+                        <span style="color:var(--danger); font-weight:700;">${fmt(s.max)}</span>
                     </div>
                 </div>
-            `).join('');
-
-            lucide.createIcons();
-        }
-
-        function renderTable(h) {
-            document.getElementById('history-body').innerHTML = h.map(x => `
-                <tr>
-                    <td style="font-weight:700;">${new Date(x.fecha).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
-                    <td style="color:var(--primary); font-weight:800;">${x.precio_unidad.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 3 })}€</td>
-                    <td><strong>${x.supermercado}</strong></td>
-                    <td>${x.marca}</td>
-                    <td>${x.cantidad}${x.unidad}</td>
-                    <td>${x.es_oferta ? '<span class="badge" style="background:var(--warning); color:white;">OFERTA</span>' : '-'}</td>
-                </tr>
             `).join('');
         }
 
