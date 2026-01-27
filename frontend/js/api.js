@@ -124,22 +124,7 @@ const ApiService = {
     async deleteUnidad(id) { return fetch(`${API_URL}/catalog/unidades/${id}`, { method: "DELETE" }); },
     async deleteProducto(id) { return fetch(`${API_URL}/catalog/productos/${id}`, { method: "DELETE" }); },
 
-    // Relaciones (obsoletas para creación pero se mantienen por compatibilidad si fuese necesario)
-    async linkProductoMarca(producto_id, marca_id) {
-        return fetch(`${API_URL}/catalog/relacionar-producto-marca`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ producto_id: parseInt(producto_id), marca_id: parseInt(marca_id) })
-        }).then(res => res.json());
-    },
-
-    async unlinkProductoMarca(producto_id, marca_id) {
-        return fetch(`${API_URL}/catalog/desvincular-producto-marca?producto_id=${producto_id}&marca_id=${marca_id}`, {
-            method: "DELETE"
-        }).then(res => res.json());
-    },
-
-    // Relaciones específicas (nuevas)
+    // Relaciones específicas
     async linkCategoria(producto_id, categoria_id) {
         return fetch(`${API_URL}/catalog/productos/${producto_id}/categorias/${categoria_id}`, {
             method: "POST"

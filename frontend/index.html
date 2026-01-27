@@ -355,6 +355,7 @@
         </div>
     </div>
 
+    <script src="js/utils.js"></script>
     <script src="config.js"></script>
     <script src="js/api.js"></script>
     <script src="js/components.js"></script>
@@ -406,18 +407,18 @@
                                 <div class="item-meta">
                                     <span class="meta-badge store">
                                         <i data-lucide="store" style="width:12px;"></i>
-                                        ${p.supermercado}
+                                        ${escapeHTML(p.supermercado)}
                                     </span>
                                     <span class="meta-badge brand">
                                         <i data-lucide="award" style="width:12px;"></i>
-                                        ${p.marca}
+                                        ${escapeHTML(p.marca)}
                                     </span>
                                     ${p.es_oferta ? '<span class="offer-badge">🔥 OFERTA</span>' : ''}
                                 </div>
-                                <div class="item-product">${p.producto}</div>
+                                <div class="item-product">${escapeHTML(p.producto)}</div>
                                 ${categories.length > 0 ? `
                                     <div class="item-tags">
-                                        ${categories.map(cat => `<span class="tag">${cat}</span>`).join('')}
+                                        ${categories.map(cat => `<span class="tag">${escapeHTML(cat)}</span>`).join('')}
                                     </div>
                                 ` : ''}
                             </div>

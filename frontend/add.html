@@ -94,6 +94,7 @@
         </main>
     </div>
 
+    <script src="js/utils.js"></script>
     <script src="config.js"></script>
     <script src="js/api.js"></script>
     <script src="js/components.js"></script>
@@ -110,7 +111,7 @@
                 updateProductSelect(products);
 
                 const sSel = document.getElementById("s-id");
-                sSel.innerHTML = supers.sort((a, b) => a.nombre.localeCompare(b.nombre)).map(s => `<option value="${s.id}">${s.nombre}</option>`).join('');
+                sSel.innerHTML = supers.sort((a, b) => a.nombre.localeCompare(b.nombre)).map(s => `<option value="${s.id}">${escapeHTML(s.nombre)}</option>`).join('');
 
                 const pSel = document.getElementById("p-id");
                 pSel.onchange = sync;
@@ -126,7 +127,7 @@
         function updateProductSelect(filtered) {
             const pSel = document.getElementById("p-id");
             const currentVal = pSel.value;
-            pSel.innerHTML = '<option value="">Selecciona...</option>' + filtered.map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
+            pSel.innerHTML = '<option value="">Selecciona...</option>' + filtered.map(p => `<option value="${p.id}">${escapeHTML(p.nombre)}</option>`).join('');
             if (filtered.find(x => x.id == currentVal)) pSel.value = currentVal;
         }
 
@@ -147,10 +148,10 @@
                 return;
             };
 
-            mSel.innerHTML = p.marcas.map(m => `<option value="${m.id}">${m.nombre}</option>`).join('') || '<option value="">Sin marcas vinculadas</option>';
+            mSel.innerHTML = p.marcas.map(m => `<option value="${m.id}">${escapeHTML(m.nombre)}</option>`).join('') || '<option value="">Sin marcas vinculadas</option>';
 
             const allowed = p.unidades.length > 0 ? p.unidades.map(u => u.nombre) : UNITS_FALLBACK;
-            uSel.innerHTML = allowed.map(u => `<option value="${u}">${u}</option>`).join('');
+            uSel.innerHTML = allowed.map(u => `<option value="${u}">${escapeHTML(u)}</option>`).join('');
         }
 
         async function load() {

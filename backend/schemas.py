@@ -95,15 +95,3 @@ class PrecioDisplay(BaseModel):
     tipo_oferta: Optional[str] = None
     fecha: str
 
-# Relaciones (obsoletas si usamos ProductoCreate con IDs, pero las mantengo por si acaso)
-class LinkProductoMarca(BaseModel):
-    producto_id: int
-    marca_id: int
-
-class LinkProductoCategoria(BaseModel):
-    producto_id: int
-    categoria_id: int
-
-class LinkProductoUnidad(BaseModel):
-    producto_id: int
-    unidad_id: int

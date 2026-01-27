@@ -1,4 +1,5 @@
 from typing import List
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
@@ -9,10 +10,49 @@ from fastapi.staticfiles import StaticFiles
 from . import models, schemas
 from .database import engine, SessionLocal
 
-# Re-crear tablas (Nota: SQLAlchemy no migra automáticamente cambios en tablas existentes)
-models.Base.metadata.create_all(bind=engine)
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Re-crear tablas al inicio
+    models.Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="PriceTracker Pro API")
+    # Semilla de datos
+    db = SessionLocal()
+    try:
+        # Semilla de Unidades
+        if not db.query(models.Unidad).first():
+            units = ["kg", "g", "L", "ml", "ud", "pack"]
+            for u in units:
+                db.add(models.Unidad(nombre=u))
+            db.commit()
+
+        # Semilla de Categorías
+        if not db.query(models.Categoria).first():
+            cats = ["Bebidas", "Lácteos", "Despensa", "Carnicería", "Frutería", "Limpieza", "Higiene", "Ofertas", "Bio"]
+            for c in cats:
+                db.add(models.Categoria(nombre=c))
+            db.commit()
+
+        # Semilla de Supermercados
+        if not db.query(models.Supermercado).first():
+            supers = ["Mercadona", "Carrefour", "Lidl", "Aldi", "Dia", "Eroski", "Alcampo", "Hipercor"]
+            for s in supers:
+                db.add(models.Supermercado(nombre=s))
+            db.commit()
+
+        # Semilla de Marcas
+        if not db.query(models.Marca).first():
+            marcas = ["Hacendado", "Carrefour", "Nestlé", "Coca-Cola", "Danone", "Pascual", "Fairy", "Ariel"]
+            for m in marcas:
+                db.add(models.Marca(nombre=m))
+            db.commit()
+    except Exception as e:
+        print(f"Error seeding data: {e}")
+    finally:
+        db.close()
+
+    yield
+
+app = FastAPI(title="PriceTracker Pro API", lifespan=lifespan)
 
 # --- Dependency ---
 def get_db():
@@ -24,7 +64,6 @@ def get_db():
 @app.get("/config.js")
 def get_config():
     backend_url = os.getenv("BACKEND_URL", "")
-    print(f"DEBUG: Serving config.js with BACKEND_URL='{backend_url}'")
     content = f"window.BACKEND_URL = '{backend_url}';"
     return Response(content=content, media_type="application/javascript")
 
@@ -32,12 +71,25 @@ def get_config():
 def health_check():
     return {"status": "ok"}
 
+# --- Security Middleware ---
+allowed_origins = os.getenv("ALLOWED_ORIGINS", "*").split(",")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allowed_origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.middleware("http")
+async def add_security_headers(request, call_next):
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    response.headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self' https://unpkg.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' *"
+    return response
 
 # --- Catálogo: Categorías ---
 @app.get("/catalog/categorias", response_model=List[schemas.Categoria])
@@ -122,7 +174,6 @@ def get_productos(db: Session = Depends(get_db)):
 
 @app.post("/catalog/productos", response_model=schemas.Producto)
 def create_producto(prod: schemas.ProductoCreate, db: Session = Depends(get_db)):
-    print(f"DEBUG: Creating product with name='{prod.nombre}', categoria_ids={prod.categoria_ids}, unidad_ids={prod.unidad_ids}, marca_ids={prod.marca_ids}")
     
     if not prod.nombre or not prod.nombre.strip():
         raise HTTPException(400, "El nombre del producto es obligatorio")
@@ -133,24 +184,20 @@ def create_producto(prod: schemas.ProductoCreate, db: Session = Depends(get_db))
     if prod.categoria_ids:
         cats = db.query(models.Categoria).filter(models.Categoria.id.in_(prod.categoria_ids)).all()
         nuevo.categorias = cats
-        print(f"DEBUG: Linked {len(cats)} categories")
     
     # Vinculamos Unidades
     if prod.unidad_ids:
         unis = db.query(models.Unidad).filter(models.Unidad.id.in_(prod.unidad_ids)).all()
         nuevo.unidades = unis
-        print(f"DEBUG: Linked {len(unis)} units")
     
     # Vinculamos Marcas
     if prod.marca_ids:
         marcas = db.query(models.Marca).filter(models.Marca.id.in_(prod.marca_ids)).all()
         nuevo.marcas = marcas
-        print(f"DEBUG: Linked {len(marcas)} brands")
 
     db.add(nuevo)
     db.commit()
     db.refresh(nuevo)
-    print(f"DEBUG: Product created successfully with id={nuevo.id}")
     return nuevo
 
 @app.delete("/catalog/productos/{id}")
@@ -343,40 +390,5 @@ def historial_producto(prod_id: int, db: Session = Depends(get_db)):
         })
     return res
 
-@app.on_event("startup")
-def seed_data():
-    db = SessionLocal()
-    try:
-        # Semilla de Unidades
-        if not db.query(models.Unidad).first():
-            units = ["kg", "g", "L", "ml", "ud", "pack"]
-            for u in units:
-                db.add(models.Unidad(nombre=u))
-            db.commit()
-
-        # Semilla de Categorías
-        if not db.query(models.Categoria).first():
-            cats = ["Bebidas", "Lácteos", "Despensa", "Carnicería", "Frutería", "Limpieza", "Higiene", "Ofertas", "Bio"]
-            for c in cats:
-                db.add(models.Categoria(nombre=c))
-            db.commit()
-
-        # Semilla de Supermercados
-        if not db.query(models.Supermercado).first():
-            supers = ["Mercadona", "Carrefour", "Lidl", "Aldi", "Dia", "Eroski", "Alcampo", "Hipercor"]
-            for s in supers:
-                db.add(models.Supermercado(nombre=s))
-            db.commit()
-
-        # Semilla de Marcas
-        if not db.query(models.Marca).first():
-            marcas = ["Hacendado", "Carrefour", "Nestlé", "Coca-Cola", "Danone", "Pascual", "Fairy", "Ariel"]
-            for m in marcas:
-                db.add(models.Marca(nombre=m))
-            db.commit()
-    except Exception as e:
-        print(f"Error seeding data: {e}")
-    finally:
-        db.close()
 
 app.mount("/", StaticFiles(directory="frontend", html=True), name="frontend")
