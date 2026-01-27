@@ -10,11 +10,27 @@ producto_marca = Table(
     Column("marca_id", Integer, ForeignKey("marcas.id"), primary_key=True),
 )
 
+# Tabla de relación muchos-a-muchos entre Productos y Categorías
+producto_categoria = Table(
+    "producto_categoria",
+    Base.metadata,
+    Column("producto_id", Integer, ForeignKey("productos.id"), primary_key=True),
+    Column("categoria_id", Integer, ForeignKey("categorias.id"), primary_key=True),
+)
+
+# Tabla de relación muchos-a-muchos entre Productos y Unidades
+producto_unidad = Table(
+    "producto_unidad",
+    Base.metadata,
+    Column("producto_id", Integer, ForeignKey("productos.id"), primary_key=True),
+    Column("unidad_id", Integer, ForeignKey("unidades.id"), primary_key=True),
+)
+
 class Categoria(Base):
     __tablename__ = "categorias"
     id = Column(Integer, primary_key=True, index=True)
     nombre = Column(String, unique=True, index=True)
-    productos = relationship("Producto", back_populates="categoria")
+    productos = relationship("Producto", secondary=producto_categoria, back_populates="categorias")
 
 class Marca(Base):
     __tablename__ = "marcas"
@@ -30,16 +46,21 @@ class Supermercado(Base):
     nombre = Column(String, unique=True, index=True)
     precios = relationship("Precio", back_populates="supermercado_rel")
 
+class Unidad(Base):
+    __tablename__ = "unidades"
+    id = Column(Integer, primary_key=True, index=True)
+    nombre = Column(String, unique=True, index=True) # kg, g, L, ml, ud, etc.
+    productos = relationship("Producto", secondary=producto_unidad, back_populates="unidades")
+
 class Producto(Base):
     __tablename__ = "productos"
     id = Column(Integer, primary_key=True, index=True)
     nombre = Column(String, index=True)
-    categoria_id = Column(Integer, ForeignKey("categorias.id"))
-    unidades_permitidas = Column(String, nullable=True) # "kg,g" , "L,ml", "ud"
     
-    categoria = relationship("Categoria", back_populates="productos")
-    precios = relationship("Precio", back_populates="producto_rel")
+    categorias = relationship("Categoria", secondary=producto_categoria, back_populates="productos")
+    unidades = relationship("Unidad", secondary=producto_unidad, back_populates="productos")
     marcas = relationship("Marca", secondary=producto_marca, back_populates="productos")
+    precios = relationship("Precio", back_populates="producto_rel")
 
 class Precio(Base):
     __tablename__ = "precios"
@@ -49,7 +70,7 @@ class Precio(Base):
     supermercado_id = Column(Integer, ForeignKey("supermercados.id"))
     
     cantidad = Column(Float)
-    unidad = Column(String)
+    unidad = Column(String) # Mantenemos el string por ahora para evitar romper histórico de precios si no queremos migrar todo, o podríamos usar FK a Unidad. Dada la petición, parece que Unidad es más una restricción para Producto.
     precio_total = Column(Float)
     precio_unidad = Column(Float)
     

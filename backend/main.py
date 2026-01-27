@@ -9,7 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from . import models, schemas
 from .database import engine, SessionLocal
 
-# Re-crear tablas
+# Re-crear tablas (Nota: SQLAlchemy no migra automáticamente cambios en tablas existentes)
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="PriceTracker Pro API")
@@ -24,6 +24,7 @@ def get_db():
 @app.get("/config.js")
 def get_config():
     backend_url = os.getenv("BACKEND_URL", "")
+    print(f"DEBUG: Serving config.js with BACKEND_URL='{backend_url}'")
     content = f"window.BACKEND_URL = '{backend_url}';"
     return Response(content=content, media_type="application/javascript")
 
@@ -41,7 +42,7 @@ app.add_middleware(
 # --- Catálogo: Categorías ---
 @app.get("/catalog/categorias", response_model=List[schemas.Categoria])
 def get_categorias(db: Session = Depends(get_db)):
-    return db.query(models.Categoria).all()
+    return db.query(models.Categoria).order_by(models.Categoria.nombre).all()
 
 @app.post("/catalog/categorias", response_model=schemas.Categoria)
 def create_categoria(cat: schemas.CategoriaCreate, db: Session = Depends(get_db)):
@@ -60,7 +61,7 @@ def delete_categoria(id: int, db: Session = Depends(get_db)):
 # --- Catálogo: Marcas ---
 @app.get("/catalog/marcas", response_model=List[schemas.Marca])
 def get_marcas(db: Session = Depends(get_db)):
-    return db.query(models.Marca).all()
+    return db.query(models.Marca).order_by(models.Marca.nombre).all()
 
 @app.post("/catalog/marcas", response_model=schemas.Marca)
 def create_marca(marca: schemas.MarcaCreate, db: Session = Depends(get_db)):
@@ -76,10 +77,29 @@ def delete_marca(id: int, db: Session = Depends(get_db)):
     db.commit()
     return {"status": "ok"}
 
+# --- Catálogo: Unidades ---
+@app.get("/catalog/unidades", response_model=List[schemas.Unidad])
+def get_unidades(db: Session = Depends(get_db)):
+    return db.query(models.Unidad).order_by(models.Unidad.nombre).all()
+
+@app.post("/catalog/unidades", response_model=schemas.Unidad)
+def create_unidad(uni: schemas.UnidadCreate, db: Session = Depends(get_db)):
+    nueva = models.Unidad(nombre=uni.nombre)
+    db.add(nueva)
+    db.commit()
+    db.refresh(nueva)
+    return nueva
+
+@app.delete("/catalog/unidades/{id}")
+def delete_unidad(id: int, db: Session = Depends(get_db)):
+    db.query(models.Unidad).filter(models.Unidad.id == id).delete()
+    db.commit()
+    return {"status": "ok"}
+
 # --- Catálogo: Supermercados ---
 @app.get("/catalog/supermercados", response_model=List[schemas.Supermercado])
 def get_supermercados(db: Session = Depends(get_db)):
-    return db.query(models.Supermercado).all()
+    return db.query(models.Supermercado).order_by(models.Supermercado.nombre).all()
 
 @app.post("/catalog/supermercados", response_model=schemas.Supermercado)
 def create_super(sup: schemas.SupermercadoCreate, db: Session = Depends(get_db)):
@@ -102,14 +122,35 @@ def get_productos(db: Session = Depends(get_db)):
 
 @app.post("/catalog/productos", response_model=schemas.Producto)
 def create_producto(prod: schemas.ProductoCreate, db: Session = Depends(get_db)):
-    nuevo = models.Producto(
-        nombre=prod.nombre, 
-        categoria_id=prod.categoria_id,
-        unidades_permitidas=prod.unidades_permitidas
-    )
+    print(f"DEBUG: Creating product with name='{prod.nombre}', categoria_ids={prod.categoria_ids}, unidad_ids={prod.unidad_ids}, marca_ids={prod.marca_ids}")
+    
+    if not prod.nombre or not prod.nombre.strip():
+        raise HTTPException(400, "El nombre del producto es obligatorio")
+    
+    nuevo = models.Producto(nombre=prod.nombre.strip())
+    
+    # Vinculamos Categorías
+    if prod.categoria_ids:
+        cats = db.query(models.Categoria).filter(models.Categoria.id.in_(prod.categoria_ids)).all()
+        nuevo.categorias = cats
+        print(f"DEBUG: Linked {len(cats)} categories")
+    
+    # Vinculamos Unidades
+    if prod.unidad_ids:
+        unis = db.query(models.Unidad).filter(models.Unidad.id.in_(prod.unidad_ids)).all()
+        nuevo.unidades = unis
+        print(f"DEBUG: Linked {len(unis)} units")
+    
+    # Vinculamos Marcas
+    if prod.marca_ids:
+        marcas = db.query(models.Marca).filter(models.Marca.id.in_(prod.marca_ids)).all()
+        nuevo.marcas = marcas
+        print(f"DEBUG: Linked {len(marcas)} brands")
+
     db.add(nuevo)
     db.commit()
     db.refresh(nuevo)
+    print(f"DEBUG: Product created successfully with id={nuevo.id}")
     return nuevo
 
 @app.delete("/catalog/productos/{id}")
@@ -118,22 +159,62 @@ def delete_producto(id: int, db: Session = Depends(get_db)):
     db.commit()
     return {"status": "ok"}
 
+# --- Relaciones Producto-Categoria ---
+@app.post("/catalog/productos/{producto_id}/categorias/{categoria_id}")
+def link_producto_categoria(producto_id: int, categoria_id: int, db: Session = Depends(get_db)):
+    prod = db.query(models.Producto).filter(models.Producto.id == producto_id).first()
+    cat = db.query(models.Categoria).filter(models.Categoria.id == categoria_id).first()
+    if not prod or not cat: raise HTTPException(404, "No existe producto o categoría")
+    if cat not in prod.categorias:
+        prod.categorias.append(cat)
+        db.commit()
+    return {"status": "ok"}
+
+@app.delete("/catalog/productos/{producto_id}/categorias/{categoria_id}")
+def unlink_producto_categoria(producto_id: int, categoria_id: int, db: Session = Depends(get_db)):
+    prod = db.query(models.Producto).filter(models.Producto.id == producto_id).first()
+    cat = db.query(models.Categoria).filter(models.Categoria.id == categoria_id).first()
+    if prod and cat and cat in prod.categorias:
+        prod.categorias.remove(cat)
+        db.commit()
+    return {"status": "ok"}
+
+# --- Relaciones Producto-Unidad ---
+@app.post("/catalog/productos/{producto_id}/unidades/{unidad_id}")
+def link_producto_unidad(producto_id: int, unidad_id: int, db: Session = Depends(get_db)):
+    prod = db.query(models.Producto).filter(models.Producto.id == producto_id).first()
+    unit = db.query(models.Unidad).filter(models.Unidad.id == unidad_id).first()
+    if not prod or not unit: raise HTTPException(404, "No existe producto o unidad")
+    if unit not in prod.unidades:
+        prod.unidades.append(unit)
+        db.commit()
+    return {"status": "ok"}
+
+@app.delete("/catalog/productos/{producto_id}/unidades/{unidad_id}")
+def unlink_producto_unidad(producto_id: int, unidad_id: int, db: Session = Depends(get_db)):
+    prod = db.query(models.Producto).filter(models.Producto.id == producto_id).first()
+    unit = db.query(models.Unidad).filter(models.Unidad.id == unidad_id).first()
+    if prod and unit and unit in prod.unidades:
+        prod.unidades.remove(unit)
+        db.commit()
+    return {"status": "ok"}
+
 # --- Relaciones Producto-Marca ---
-@app.post("/catalog/relacionar-producto-marca")
-def link_prod_marca(data: schemas.LinkProductoMarca, db: Session = Depends(get_db)):
-    prod = db.query(models.Producto).filter(models.Producto.id == data.producto_id).first()
-    marca = db.query(models.Marca).filter(models.Marca.id == data.marca_id).first()
+@app.post("/catalog/productos/{producto_id}/marcas/{marca_id}")
+def link_producto_marca(producto_id: int, marca_id: int, db: Session = Depends(get_db)):
+    prod = db.query(models.Producto).filter(models.Producto.id == producto_id).first()
+    marca = db.query(models.Marca).filter(models.Marca.id == marca_id).first()
     if not prod or not marca: raise HTTPException(404, "No existe producto o marca")
     if marca not in prod.marcas:
         prod.marcas.append(marca)
         db.commit()
     return {"status": "ok"}
 
-@app.delete("/catalog/desvincular-producto-marca")
-def unlink_prod_marca(producto_id: int, marca_id: int, db: Session = Depends(get_db)):
+@app.delete("/catalog/productos/{producto_id}/marcas/{marca_id}")
+def unlink_producto_marca(producto_id: int, marca_id: int, db: Session = Depends(get_db)):
     prod = db.query(models.Producto).filter(models.Producto.id == producto_id).first()
     marca = db.query(models.Marca).filter(models.Marca.id == marca_id).first()
-    if marca in prod.marcas:
+    if prod and marca and marca in prod.marcas:
         prod.marcas.remove(marca)
         db.commit()
     return {"status": "ok"}
@@ -163,6 +244,11 @@ def listar_precios(db: Session = Depends(get_db)):
     precios = db.query(models.Precio).order_by(models.Precio.id.desc()).all()
     res = []
     for p in precios:
+        # Skip if product was deleted
+        if not p.producto_rel or not p.marca_rel or not p.supermercado_rel:
+            continue
+            
+        cats_str = ", ".join([c.nombre for c in p.producto_rel.categorias]) if p.producto_rel.categorias else "Sin categoría"
         res.append({
             "id": p.id,
             "producto_id": p.producto_id,
@@ -170,7 +256,7 @@ def listar_precios(db: Session = Depends(get_db)):
             "supermercado_id": p.supermercado_id,
             "producto": p.producto_rel.nombre,
             "marca": p.marca_rel.nombre,
-            "categoria": p.producto_rel.categoria.nombre,
+            "categoria": cats_str,
             "supermercado": p.supermercado_rel.nombre,
             "cantidad": p.cantidad,
             "unidad": p.unidad,
@@ -186,6 +272,10 @@ def listar_precios(db: Session = Depends(get_db)):
 def get_precio(id: int, db: Session = Depends(get_db)):
     p = db.query(models.Precio).filter(models.Precio.id == id).first()
     if not p: raise HTTPException(404, "No existe")
+    if not p.producto_rel or not p.marca_rel or not p.supermercado_rel:
+        raise HTTPException(404, "Producto, marca o supermercado relacionado fue eliminado")
+        
+    cats_str = ", ".join([c.nombre for c in p.producto_rel.categorias]) if p.producto_rel.categorias else "Sin categoría"
     return {
         "id": p.id,
         "producto_id": p.producto_id,
@@ -193,7 +283,7 @@ def get_precio(id: int, db: Session = Depends(get_db)):
         "supermercado_id": p.supermercado_id,
         "producto": p.producto_rel.nombre,
         "marca": p.marca_rel.nombre,
-        "categoria": p.producto_rel.categoria.nombre,
+        "categoria": cats_str,
         "supermercado": p.supermercado_rel.nombre,
         "cantidad": p.cantidad,
         "unidad": p.unidad,
@@ -229,6 +319,11 @@ def historial_producto(prod_id: int, db: Session = Depends(get_db)):
     precios = db.query(models.Precio).filter(models.Precio.producto_id == prod_id).order_by(models.Precio.id.desc()).all()
     res = []
     for p in precios:
+        # Skip if related objects were deleted
+        if not p.producto_rel or not p.marca_rel or not p.supermercado_rel:
+            continue
+            
+        cats_str = ", ".join([c.nombre for c in p.producto_rel.categorias]) if p.producto_rel.categorias else "Sin categoría"
         res.append({
             "id": p.id,
             "producto_id": p.producto_id,
@@ -236,7 +331,7 @@ def historial_producto(prod_id: int, db: Session = Depends(get_db)):
             "supermercado_id": p.supermercado_id,
             "producto": p.producto_rel.nombre,
             "marca": p.marca_rel.nombre,
-            "categoria": p.producto_rel.categoria.nombre,
+            "categoria": cats_str,
             "supermercado": p.supermercado_rel.nombre,
             "cantidad": p.cantidad,
             "unidad": p.unidad,
@@ -248,45 +343,34 @@ def historial_producto(prod_id: int, db: Session = Depends(get_db)):
         })
     return res
 
-# Startup seeding logic (mantener similar)
-@app.on_event("startup")
-def startup_db_fix():
-    # Pequeño script de migración para SQLite (PoC)
-    # SQLAlchemy create_all no añade columnas a tablas existentes
-    db = SessionLocal()
-    try:
-        from sqlalchemy import text
-        # Intentar añadir la columna unidades_permitidas si no existe
-        if engine.url.drivername == "sqlite":
-            try:
-                db.execute(text("ALTER TABLE productos ADD COLUMN unidades_permitidas TEXT"))
-                db.commit()
-            except:
-                db.rollback()
-    finally:
-        db.close()
-
 @app.on_event("startup")
 def seed_data():
     db = SessionLocal()
     try:
+        # Semilla de Unidades
+        if not db.query(models.Unidad).first():
+            units = ["kg", "g", "L", "ml", "ud", "pack"]
+            for u in units:
+                db.add(models.Unidad(nombre=u))
+            db.commit()
+
         # Semilla de Categorías
         if not db.query(models.Categoria).first():
-            cats = ["Bebidas", "Lácteos", "Despensa", "Carnicería", "Frutería", "Limpieza", "Higiene"]
+            cats = ["Bebidas", "Lácteos", "Despensa", "Carnicería", "Frutería", "Limpieza", "Higiene", "Ofertas", "Bio"]
             for c in cats:
                 db.add(models.Categoria(nombre=c))
             db.commit()
 
         # Semilla de Supermercados
         if not db.query(models.Supermercado).first():
-            supers = ["Mercadona", "Carrefour", "Lidl", "Aldi", "Dia", "Eroski"]
+            supers = ["Mercadona", "Carrefour", "Lidl", "Aldi", "Dia", "Eroski", "Alcampo", "Hipercor"]
             for s in supers:
                 db.add(models.Supermercado(nombre=s))
             db.commit()
 
         # Semilla de Marcas
         if not db.query(models.Marca).first():
-            marcas = ["Hacendado", "Carrefour", "Nestlé", "Coca-Cola", "Danone", "Pascual"]
+            marcas = ["Hacendado", "Carrefour", "Nestlé", "Coca-Cola", "Danone", "Pascual", "Fairy", "Ariel"]
             for m in marcas:
                 db.add(models.Marca(nombre=m))
             db.commit()
