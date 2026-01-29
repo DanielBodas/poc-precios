@@ -79,8 +79,8 @@ def get_db():
 # --- Auth Routes ---
 @app.get('/login/google')
 async def login_google(request: Request):
-    # Construct Redirect URI dynamically based on configured BACKEND_URL or Host
-    base_url = os.getenv('BACKEND_URL', 'http://127.0.0.1:8000')
+    # Construct Redirect URI dynamically based on configured API_URL, BACKEND_URL or Host
+    base_url = os.getenv('API_URL') or os.getenv('BACKEND_URL') or 'http://127.0.0.1:8000'
     if base_url.endswith('/'): base_url = base_url[:-1]
     redirect_uri = f"{base_url}/auth/google/callback"
     
@@ -123,7 +123,7 @@ async def auth_google(request: Request, db: Session = Depends(get_db)):
         access_token = create_access_token(data={"sub": user.email, "role": user.role, "id": user.id})
         
         # Redirect to Frontend Home with Token
-        base_url = os.getenv('BACKEND_URL', 'http://127.0.0.1:8000')
+        base_url = os.getenv('API_URL') or os.getenv('BACKEND_URL') or 'http://127.0.0.1:8000'
         # Assuming frontend is served statically or on a known port. 
         # If frontend is separate (e.g. port 5500), we should redirect there.
         # Ideally, use an allowed frontend origin from env.
@@ -162,7 +162,7 @@ def read_users_me(request: Request, db: Session = Depends(get_db)):
 # --- Endpoints de Configuración ---
 @app.get("/config.js")
 def get_config():
-    backend_url = os.getenv("BACKEND_URL", "")
+    backend_url = os.getenv("API_URL") or os.getenv("BACKEND_URL") or ""
     print(f"DEBUG: Serving config.js with BACKEND_URL='{backend_url}'")
     content = f"window.BACKEND_URL = '{backend_url}';"
     return Response(content=content, media_type="application/javascript")
