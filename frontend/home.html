@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Muro de Precios — PriceTracker Pro</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="css/main.css">
+</head>
+
+<body>
+    <!-- components.js inserts Navbar here -->
+
+    <div class="layout-container">
+        <!-- components.js inserts Sidebar-Left here -->
+
+        <!-- Main Feed -->
+        <main class="feed-column">
+            <!-- Create Post -->
+            <div class="create-post-card" onclick="window.location.href='add.html'">
+                <div class="user-avatar">YO</div>
+                <div class="create-input">Comparte un nuevo precio o una oferta...</div>
+                <i data-lucide="image" style="color: #9ca3af; width: 20px;"></i>
+            </div>
+
+            <!-- Feed Stream -->
+            <div id="feed-container">
+                <!-- Skeletons while loading -->
+                <div class="social-card" style="height: 300px; padding: 1rem;">
+                    <div class="skeleton" style="width: 40%; height: 20px; border-radius: 4px; margin-bottom: 1rem;">
+                    </div>
+                    <div class="skeleton" style="width: 80%; height: 40px; border-radius: 4px; margin-bottom: 1rem;">
+                    </div>
+                    <div class="skeleton" style="width: 100%; height: 150px; border-radius: 8px;"></div>
+                </div>
+            </div>
+
+            <div id="empty-state" class="empty-state" style="display: none; padding: 3rem; text-align: center;">
+                <i data-lucide="coffee" style="width: 48px; height: 48px; color: #cbd5e1; margin-bottom: 1rem;"></i>
+                <h3 style="color: #64748b; font-size: 1.1rem;">Aún no hay actividad</h3>
+                <p style="color: #94a3b8; font-size: 0.9rem;">Sé el primero en compartir un precio.</p>
+            </div>
+        </main>
+
+        <!-- Sidebar Right: Widgets -->
+        <aside class="sidebar-right">
+            <div class="widget-card">
+                <div class="widget-header">
+                    <span>Tendencias</span>
+                    <i data-lucide="trending-up" style="width: 16px; color: var(--primary);"></i>
+                </div>
+                <div id="trending-list">
+                    <!-- Populated via JS -->
+                    <div class="trend-item">
+                        <span class="trend-rank">1</span>
+                        <div class="trend-info">
+                            <h4>Aceite de Oliva</h4>
+                            <span>12 publicaciones recientes</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="widget-card">
+                <div class="widget-header">
+                    <span>Supermercados Activos</span>
+                </div>
+                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;" id="stores-list">
+                    <!-- Populated via JS -->
+                </div>
+            </div>
+
+            <div style="font-size: 0.75rem; color: #94a3b8; text-align: center;">
+                &copy; 2026 PriceTracker Pro <br>
+                Privacidad · Términos · Cookies
+            </div>
+        </aside>
+    </div>
+
+    <script src="config.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/components.js"></script>
+    <script>
+        // No fake data helpers. Real data only.
+
+        function getTimeAgo(date) {
+            const now = new Date();
+            const diff = now - date;
+            const minutes = Math.floor(diff / 60000);
+            const hours = Math.floor(diff / 3600000);
+            if (minutes < 60) return `${minutes}m`;
+            if (hours < 24) return `${hours}h`;
+            return `${Math.floor(hours / 24)}d`;
+        }
+
+        async function init() {
+            try {
+                const prices = await ApiService.getPrecios();
+                renderFeed(prices);
+                renderTrending(prices);
+                renderStores(prices);
+            } catch (e) {
+                console.error("Error loading feed:", e);
+                document.getElementById('feed-container').innerHTML = '<div style="text-align:center; padding: 2rem; color: #ef4444;">Error cargando el feed.</div>';
+            }
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function renderFeed(prices) {
+            const container = document.getElementById('feed-container');
+            const empty = document.getElementById('empty-state');
+
+            if (!prices || prices.length === 0) {
+                container.innerHTML = '';
+                empty.style.display = 'block';
+                return;
+            }
+
+            empty.style.display = 'none';
+
+            container.innerHTML = prices.map((p, idx) => {
+                const dateObj = new Date(p.fecha);
+                const timeAgo = getTimeAgo(dateObj);
+                const initials = p.supermercado ? p.supermercado.substring(0, 2).toUpperCase() : "US";
+
+                return `
+                    <div class="social-card" style="animation-delay: ${idx * 0.05}s">
+                        <div class="card-header">
+                            <div class="header-left">
+                                <div class="user-avatar small" style="background: var(--primary);">${initials}</div>
+                                <div class="user-info">
+                                    <span class="user-name">${p.supermercado || "Desconocido"}</span>
+                                    <div class="post-meta">
+                                        <span>Precio registrado</span>
+                                        <span>• ${timeAgo}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <button class="action-btn" style="padding: 0.5rem;" onclick="toggleMenu(${p.id})">
+                                <i data-lucide="more-horizontal"></i>
+                            </button>
+                        </div>
+                        
+                        <div class="card-body">
+                            <h3 class="product-title">${p.producto}</h3>
+                            <div class="product-meta">
+                                <span class="tag-pill">${p.marca}</span>
+                                ${p.category ? `<span class="tag-pill">${p.category}</span>` : ''}
+                            </div>
+                            
+                            <div class="main-content">
+                                <div>
+                                    <div class="price-highlight">${p.precio_unidad.toLocaleString('es-ES', { minimumFractionDigits: 2 })}€</div>
+                                    <div class="price-sub">El ${p.unidad}</div>
+                                </div>
+                                
+                                ${p.es_oferta ? `
+                                    <div class="offer-indicator">
+                                        <i data-lucide="flame" style="width:16px;"></i>
+                                        ¡OFERTA!
+                                    </div>
+                                ` : ''}
+                                
+                                <div style="text-align: right; color: var(--text-muted); font-size: 0.85rem;">
+                                    Total: <strong>${p.precio_total.toFixed(2)}€</strong><br>
+                                    x ${p.cantidad}${p.unidad}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="card-footer">
+                            <button class="action-btn primary"><i data-lucide="thumbs-up" style="width: 18px;"></i> Me gusta</button>
+                            <button class="action-btn"><i data-lucide="message-circle" style="width: 18px;"></i> Comentar</button>
+                            <button class="action-btn"><i data-lucide="share-2" style="width: 18px;"></i> Compartir</button>
+                            <button class="action-btn" onclick="window.location.href='add.html?edit=${p.id}'"><i data-lucide="edit-3" style="width: 18px;"></i></button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function renderTrending(prices) {
+            const productCounts = {};
+            prices.forEach(p => {
+                productCounts[p.producto] = (productCounts[p.producto] || 0) + 1;
+            });
+
+            const trending = Object.entries(productCounts)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 5);
+
+            const list = document.getElementById('trending-list');
+            if (trending.length === 0) {
+                list.innerHTML = '<div style="color:var(--text-muted); font-size:0.9rem;">Sin datos suficientes</div>';
+                return;
+            }
+
+            list.innerHTML = trending.map((t, index) => `
+                <div class="trend-item">
+                    <span class="trend-rank">${index + 1}</span>
+                    <div class="trend-info">
+                        <h4>${t[0]}</h4>
+                        <span>${t[1]} registros recientes</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderStores(prices) {
+            const stores = [...new Set(prices.map(p => p.supermercado))].slice(0, 6);
+            const container = document.getElementById('stores-list');
+
+            container.innerHTML = stores.map(s => `
+                <span class="tag-pill" style="border: 1px solid rgba(0,0,0,0.05); background: white;">${s}</span>
+            `).join('');
+        }
+
+        document.addEventListener("DOMContentLoaded", init);
+    </script>
+</body>
+
+</html>

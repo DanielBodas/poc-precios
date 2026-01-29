@@ -1,10 +1,22 @@
 from typing import List
-from fastapi import FastAPI, Depends, HTTPException, Response
+from fastapi import FastAPI, Depends, HTTPException, Response, Request
+from fastapi.responses import RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
-from datetime import datetime
+from datetime import datetime, timedelta
+import jwt
+
 import os
+import json
 from fastapi.staticfiles import StaticFiles
+from dotenv import load_dotenv
+
+# Cargar variables de entorno desde .env
+load_dotenv()
+
+# OAuth Imports
+from starlette.middleware.sessions import SessionMiddleware
+from authlib.integrations.starlette_client import OAuth
 
 from . import models, schemas
 from .database import engine, SessionLocal
@@ -14,11 +26,138 @@ models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="PriceTracker Pro API")
 
+# --- Security & Session Config ---
+# Leemos SECRET_KEY de env o usamos uno por defecto para dev
+app.add_middleware(SessionMiddleware, secret_key=os.getenv("SESSION_SECRET", "super_secret_dev_key"))
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# --- OAuth Config ---
+oauth = OAuth()
+oauth.register(
+    name='google',
+    client_id=os.getenv('GOOGLE_CLIENT_ID'),
+    client_secret=os.getenv('GOOGLE_CLIENT_SECRET'),
+    server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
+    client_kwargs={'scope': 'openid email profile'}
+)
+
+# --- JWT Configuration ---
+SECRET_KEY = os.getenv("SESSION_SECRET", "super_secret_dev_key")
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7 # 1 week
+
+def create_access_token(data: dict):
+    to_encode = data.copy()
+    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
+def get_current_user_email(token: str):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        email: str = payload.get("sub")
+        if email is None:
+            return None
+        return email
+    except jwt.PyJWTError:
+        return None
+
+
 # --- Dependency ---
 def get_db():
     db = SessionLocal()
     try: yield db
     finally: db.close()
+
+# --- Auth Routes ---
+@app.get('/login/google')
+async def login_google(request: Request):
+    # Construct Redirect URI dynamically based on configured BACKEND_URL or Host
+    base_url = os.getenv('BACKEND_URL', 'http://127.0.0.1:8000')
+    if base_url.endswith('/'): base_url = base_url[:-1]
+    redirect_uri = f"{base_url}/auth/google/callback"
+    
+    print(f"DEBUG: Initiating Google Login with redirect_uri={redirect_uri}")
+    return await oauth.google.authorize_redirect(request, redirect_uri)
+
+@app.get('/auth/google/callback')
+async def auth_google(request: Request, db: Session = Depends(get_db)):
+    try:
+        token = await oauth.google.authorize_access_token(request)
+        user_info = token.get('userinfo')
+        if not user_info:
+             # Fallback if userinfo not in token
+             print("DEBUG: Fetching userinfo manually")
+             user_info = await oauth.google.userinfo(token=token)
+        
+        email = user_info.get('email')
+        name = user_info.get('name')
+        picture = user_info.get('picture')
+
+        print(f"DEBUG: Authenticated user: {email}")
+        
+        # Check if user exists
+        user = db.query(models.User).filter(models.User.email == email).first()
+        if not user:
+            # Create new user
+            user = models.User(email=email, name=name, picture=picture, role="user")
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+            print("DEBUG: Created new user in DB")
+        else:
+            # Update info if needed
+            if user.name != name or user.picture != picture:
+                user.name = name
+                user.picture = picture
+                db.commit()
+        
+        # Create JWT Token
+        access_token = create_access_token(data={"sub": user.email, "role": user.role, "id": user.id})
+        
+        # Redirect to Frontend Home with Token
+        base_url = os.getenv('BACKEND_URL', 'http://127.0.0.1:8000')
+        # Assuming frontend is served statically or on a known port. 
+        # If frontend is separate (e.g. port 5500), we should redirect there.
+        # Ideally, use an allowed frontend origin from env.
+        frontend_url = "http://127.0.0.1:5500/frontend/home.html" # Default to typical local setup
+        # Or better: relative path if served by same origin
+        return RedirectResponse(url=f'/home.html?token={access_token}')
+        
+    except Exception as e:
+        print(f"Auth Error: {e}")
+        return Response(f"Authentication Failed: {str(e)}", status_code=400)
+
+@app.get("/users/me")
+def read_users_me(request: Request, db: Session = Depends(get_db)):
+    auth_header = request.headers.get('Authorization')
+    if not auth_header or not auth_header.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    
+    token = auth_header.split(" ")[1]
+    email = get_current_user_email(token)
+    if not email:
+         raise HTTPException(status_code=401, detail="Invalid token")
+         
+    user = db.query(models.User).filter(models.User.email == email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+        
+    return {
+        "id": user.id,
+        "email": user.email,
+        "name": user.name,
+        "picture": user.picture,
+        "role": user.role
+    }
+
 
 # --- Endpoints de Configuración ---
 @app.get("/config.js")

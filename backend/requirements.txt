@@ -4,3 +4,8 @@ sqlalchemy
 psycopg2-binary
 pydantic
 pydantic-settings
+authlib
+itsdangerous
+python-dotenv
+pyjwt
+httpx

@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Feed de Precios — PriceTracker Pro</title>
+    <title>Iniciar Sesión — PriceTracker Pro</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,510 +14,210 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="css/main.css">
     <style>
-        .feed-header {
-            background: linear-gradient(135deg, var(--primary), #818cf8);
-            padding: 2rem;
-            border-radius: 16px;
-            margin-bottom: 2rem;
-            color: white;
-            box-shadow: 0 8px 24px rgba(99, 102, 241, 0.2);
-        }
-
-        .feed-header h1 {
-            margin: 0 0 0.5rem 0;
-            font-size: 1.75rem;
-        }
-
-        .feed-header p {
-            margin: 0;
-            opacity: 0.9;
-            font-size: 0.9rem;
-        }
-
-        .filter-bar {
-            display: flex;
-            gap: 0.75rem;
-            margin-bottom: 2rem;
-            flex-wrap: wrap;
-            align-items: center;
-        }
-
-        .filter-chip {
-            padding: 0.5rem 1rem;
-            border-radius: 20px;
-            background: white;
-            border: 2px solid rgba(0, 0, 0, 0.08);
-            cursor: pointer;
-            transition: all 0.2s;
-            font-weight: 600;
-            font-size: 0.85rem;
+        body {
             display: flex;
             align-items: center;
-            gap: 0.5rem;
-        }
-
-        .filter-chip:hover {
-            border-color: var(--primary);
-            background: rgba(99, 102, 241, 0.05);
-        }
-
-        .filter-chip.active {
-            background: var(--primary);
-            color: white;
-            border-color: var(--primary);
-        }
-
-        .feed-item {
-            background: white;
-            border-radius: 16px;
+            justify-content: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #f0f2f5 0%, #e0e7ff 100%);
             padding: 1.5rem;
-            margin-bottom: 1.25rem;
-            border: 1px solid rgba(0, 0, 0, 0.05);
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-            animation: slideUp 0.3s ease-out backwards;
-            position: relative;
-            overflow: hidden;
         }
 
-        .feed-item::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 4px;
-            height: 100%;
-            background: var(--primary);
-            opacity: 0;
-            transition: opacity 0.2s;
+        /* Hide default injected nav/sidebar for login page */
+        .main-nav,
+        .sidebar-left {
+            display: none !important;
         }
 
-        .feed-item:hover::before {
-            opacity: 1;
+        .login-card {
+            background: white;
+            padding: 3rem 2.5rem;
+            border-radius: 24px;
+            box-shadow: 0 20px 40px -5px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 420px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.5);
         }
 
-        .feed-item.is-offer {
-            border-color: #f59e0b;
-            background: linear-gradient(to right, #fffbeb 0%, white 10%);
-        }
-
-        .feed-item.is-offer::before {
-            background: #f59e0b;
-            opacity: 1;
-        }
-
-        .item-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 1rem;
-        }
-
-        .item-meta {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            flex-wrap: wrap;
-        }
-
-        .meta-badge {
+        .login-logo {
             display: inline-flex;
             align-items: center;
-            gap: 0.35rem;
-            padding: 0.35rem 0.75rem;
-            border-radius: 20px;
-            font-size: 0.75rem;
-            font-weight: 700;
-            background: rgba(0, 0, 0, 0.04);
-            color: var(--text-dark);
-        }
-
-        .meta-badge.store {
-            background: rgba(99, 102, 241, 0.1);
-            color: var(--primary);
-        }
-
-        .meta-badge.brand {
-            background: rgba(34, 197, 94, 0.1);
-            color: #16a34a;
-        }
-
-        .offer-badge {
-            background: linear-gradient(135deg, #f59e0b, #d97706);
-            color: white;
-            padding: 0.4rem 0.85rem;
-            border-radius: 20px;
-            font-size: 0.7rem;
+            gap: 0.75rem;
+            font-size: 1.75rem;
             font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
-        }
-
-        .item-product {
-            font-size: 1.15rem;
-            font-weight: 800;
-            color: var(--text-dark);
+            background: linear-gradient(to right, var(--primary), #ec4899);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
             margin-bottom: 0.5rem;
         }
 
-        .item-tags {
-            display: flex;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-            margin-bottom: 1rem;
+        .login-subtitle {
+            color: var(--text-muted);
+            margin-bottom: 2.5rem;
+            font-size: 0.95rem;
         }
 
-        .tag {
-            background: rgba(99, 102, 241, 0.08);
-            color: var(--primary);
-            padding: 0.25rem 0.65rem;
-            border-radius: 12px;
-            font-size: 0.7rem;
-            font-weight: 700;
-        }
-
-        .item-price-section {
+        .google-btn {
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            padding-top: 1rem;
-            border-top: 1px solid rgba(0, 0, 0, 0.05);
-        }
-
-        .price-main {
-            display: flex;
-            flex-direction: column;
-            gap: 0.25rem;
-        }
-
-        .price-value {
-            font-size: 1.75rem;
-            font-weight: 900;
-            color: var(--primary);
-            display: flex;
-            align-items: baseline;
-            gap: 0.35rem;
-        }
-
-        .price-unit {
-            font-size: 0.75rem;
-            color: var(--text-muted);
+            justify-content: center;
+            gap: 1rem;
+            width: 100%;
+            padding: 0.85rem;
+            border-radius: 12px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            background: white;
+            color: var(--text-main);
             font-weight: 600;
-        }
-
-        .price-detail {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-        }
-
-        .item-actions {
-            display: flex;
-            gap: 0.5rem;
-        }
-
-        .btn-icon {
-            background: rgba(0, 0, 0, 0.03);
-            border: none;
-            padding: 0.65rem;
-            border-radius: 10px;
+            font-size: 1rem;
             cursor: pointer;
             transition: all 0.2s;
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+
+        .google-btn:hover {
+            background: #f9fafb;
+            border-color: rgba(0, 0, 0, 0.2);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            margin: 1.5rem 0;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: "";
+            flex: 1;
+            height: 1px;
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        .divider::before {
+            margin-right: 1rem;
+        }
+
+        .divider::after {
+            margin-left: 1rem;
+        }
+
+        .auth-footer {
+            margin-top: 2rem;
+            font-size: 0.85rem;
             color: var(--text-muted);
         }
 
-        .btn-icon:hover {
-            background: var(--primary);
-            color: white;
-            transform: translateY(-2px);
-        }
-
-        .timestamp {
-            font-size: 0.7rem;
-            color: var(--text-muted);
+        .auth-footer a {
+            color: var(--primary);
+            text-decoration: none;
             font-weight: 600;
         }
 
-        .stats-bar {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            gap: 1rem;
+        .feature-list {
+            text-align: left;
             margin-bottom: 2rem;
+            background: #f8fafc;
+            padding: 1.25rem;
+            border-radius: 16px;
         }
 
-        .stat-card {
-            background: white;
-            padding: 1rem;
-            border-radius: 12px;
-            text-align: center;
-            border: 1px solid rgba(0, 0, 0, 0.05);
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+        .feature-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+            font-size: 0.9rem;
+            color: var(--text-main);
+            font-weight: 500;
         }
 
-        .stat-value {
-            font-size: 1.5rem;
-            font-weight: 800;
-            color: var(--primary);
+        .feature-item:last-child {
+            margin-bottom: 0;
         }
 
-        .stat-label {
-            font-size: 0.65rem;
-            text-transform: uppercase;
-            color: var(--text-muted);
-            font-weight: 700;
-            letter-spacing: 0.05em;
-            margin-top: 0.25rem;
-        }
-
-        @keyframes slideUp {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        @media (max-width: 768px) {
-            .feed-header {
-                padding: 1.5rem;
-            }
-
-            .item-price-section {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 1rem;
-            }
-
-            .filter-bar {
-                overflow-x: auto;
-                flex-wrap: nowrap;
-                padding-bottom: 0.5rem;
-            }
+        .feature-item i {
+            color: var(--success);
+            width: 18px;
         }
     </style>
 </head>
 
 <body>
-    <div class="container animate-in">
-        <div class="feed-header">
-            <h1>📊 Feed de Actividad</h1>
-            <p>Últimas actualizaciones de precios y ofertas en tiempo real</p>
+    <div class="login-card animate-in">
+        <div class="login-logo">
+            <i data-lucide="scan-line" style="-webkit-text-fill-color: initial; color: var(--primary);"></i>
+            PriceTracker Pro
         </div>
+        <p class="login-subtitle">Tu red social para el seguimiento de precios</p>
 
-        <!-- Estadísticas Rápidas -->
-        <div class="stats-bar">
-            <div class="stat-card">
-                <div class="stat-value" id="stat-total">0</div>
-                <div class="stat-label">Registros</div>
+        <div class="feature-list">
+            <div class="feature-item">
+                <i data-lucide="check-circle-2"></i>
+                <span>Comparte ofertas en tiempo real</span>
             </div>
-            <div class="stat-card">
-                <div class="stat-value" id="stat-offers" style="color: #f59e0b;">0</div>
-                <div class="stat-label">Ofertas</div>
+            <div class="feature-item">
+                <i data-lucide="check-circle-2"></i>
+                <span>Compara precios entre supermercados</span>
             </div>
-            <div class="stat-card">
-                <div class="stat-value" id="stat-stores">0</div>
-                <div class="stat-label">Supermercados</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value" id="stat-products">0</div>
-                <div class="stat-label">Productos</div>
+            <div class="feature-item">
+                <i data-lucide="check-circle-2"></i>
+                <span>Ahorra en tu cesta de la compra</span>
             </div>
         </div>
 
-        <!-- Filtros -->
-        <div class="filter-bar">
-            <div class="filter-chip active" onclick="filterFeed('all', this)">
-                <i data-lucide="list" style="width:14px;"></i>
-                Todos
-            </div>
-            <div class="filter-chip" onclick="filterFeed('offers', this)">
-                <i data-lucide="tag" style="width:14px;"></i>
-                Solo Ofertas
-            </div>
-            <div class="filter-chip" onclick="filterFeed('recent', this)">
-                <i data-lucide="clock" style="width:14px;"></i>
-                Últimas 24h
-            </div>
-            <input type="text" id="search-feed" placeholder="🔍 Buscar producto..."
-                style="flex: 1; min-width: 200px; padding: 0.5rem 1rem; border-radius: 20px; border: 2px solid rgba(0,0,0,0.08);"
-                onkeyup="searchFeed(this.value)">
-        </div>
+        <button class="google-btn" onclick="handleLogin()">
+            <img src="https://www.svgrepo.com/show/475656/google-color.svg" width="24" height="24" alt="Google">
+            Continuar con Google
+        </button>
 
-        <!-- Feed de Precios -->
-        <div id="feed-container"></div>
+        <div class="divider">O entra como invitado</div>
 
-        <div id="empty-state" class="empty-state" style="display: none;">
-            <i data-lucide="inbox" style="width: 48px; height: 48px; margin-bottom: 1rem; opacity: 0.2;"></i>
-            <p>No hay registros que coincidan con tu búsqueda.</p>
+        <button onclick="handleGuest()"
+            style="background:transparent; border:1px solid rgba(0,0,0,0.1); color:var(--text-muted); padding:0.85rem; font-weight:600; margin-top:0; width: 100%; border-radius:12px; cursor:pointer;">
+            Acceso Demo (Sin cuenta)
+        </button>
+
+        <div class="auth-footer">
+            Al continuar, aceptas nuestros <a href="#">Términos</a> y <a href="#">Privacidad</a>.
         </div>
     </div>
 
-    <script src="config.js"></script>
-    <script src="js/api.js"></script>
-    <script src="js/components.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
     <script>
-        let allPrices = [];
-        let currentFilter = 'all';
+        lucide.createIcons();
 
-        async function init() {
-            const prices = await ApiService.getPrecios();
-            allPrices = prices;
+        // Redirect if already logged in
+        if (localStorage.getItem('auth_token')) {
+            window.location.href = 'home.html';
+        }
 
-            updateStats(prices);
-            renderFeed(prices);
+        function handleLogin() {
+            console.log("Redirecting to Google Auth...");
+            const btn = document.querySelector('.google-btn');
+            btn.innerHTML = '<i data-lucide="loader" class="animate-spin"></i> Redirigiendo...';
             lucide.createIcons();
+
+            // Delay purely visual, then redirect to backend
+            setTimeout(() => {
+                // Determine backend URL (fallback to 8000 if not set)
+                const backend = window.BACKEND_URL || 'http://127.0.0.1:8000';
+                window.location.href = `${backend}/login/google`;
+            }, 800);
         }
 
-        function updateStats(prices) {
-            document.getElementById('stat-total').textContent = prices.length;
-            document.getElementById('stat-offers').textContent = prices.filter(p => p.es_oferta).length;
-
-            const uniqueStores = new Set(prices.map(p => p.supermercado));
-            document.getElementById('stat-stores').textContent = uniqueStores.size;
-
-            const uniqueProducts = new Set(prices.map(p => p.producto));
-            document.getElementById('stat-products').textContent = uniqueProducts.size;
+        function handleGuest() {
+            localStorage.setItem('auth_token', 'demo_guest_token');
+            window.location.href = 'home.html';
         }
-
-        function renderFeed(prices) {
-            const container = document.getElementById('feed-container');
-            const empty = document.getElementById('empty-state');
-
-            if (prices.length === 0) {
-                container.innerHTML = '';
-                empty.style.display = 'flex';
-                return;
-            }
-
-            empty.style.display = 'none';
-
-            container.innerHTML = prices.map((p, idx) => {
-                const date = new Date(p.fecha);
-                const timeAgo = getTimeAgo(date);
-                const categories = p.categoria ? p.categoria.split(',').map(c => c.trim()) : [];
-
-                return `
-                    <div class="feed-item ${p.es_oferta ? 'is-offer' : ''}" style="animation-delay: ${idx * 0.05}s">
-                        <div class="item-header">
-                            <div style="flex: 1;">
-                                <div class="item-meta">
-                                    <span class="meta-badge store">
-                                        <i data-lucide="store" style="width:12px;"></i>
-                                        ${p.supermercado}
-                                    </span>
-                                    <span class="meta-badge brand">
-                                        <i data-lucide="award" style="width:12px;"></i>
-                                        ${p.marca}
-                                    </span>
-                                    ${p.es_oferta ? '<span class="offer-badge">🔥 OFERTA</span>' : ''}
-                                </div>
-                                <div class="item-product">${p.producto}</div>
-                                ${categories.length > 0 ? `
-                                    <div class="item-tags">
-                                        ${categories.map(cat => `<span class="tag">${cat}</span>`).join('')}
-                                    </div>
-                                ` : ''}
-                            </div>
-                            <span class="timestamp">${timeAgo}</span>
-                        </div>
-                        
-                        <div class="item-price-section">
-                            <div class="price-main">
-                                <div class="price-value">
-                                    ${p.precio_unidad.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 3 })}€
-                                    <span class="price-unit">/ ${p.unidad}</span>
-                                </div>
-                                <div class="price-detail">
-                                    ${p.cantidad}${p.unidad} × ${(p.precio_total / p.cantidad).toLocaleString('es-ES', { minimumFractionDigits: 2 })}€ = ${p.precio_total.toFixed(2)}€ total
-                                </div>
-                            </div>
-                            
-                            <div class="item-actions">
-                                <button class="btn-icon" onclick="editPrice(${p.id})" title="Editar">
-                                    <i data-lucide="edit-2" style="width:16px;"></i>
-                                </button>
-                                <button class="btn-icon" onclick="deletePrice(${p.id})" title="Eliminar">
-                                    <i data-lucide="trash-2" style="width:16px;"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-
-            lucide.createIcons();
-        }
-
-        function getTimeAgo(date) {
-            const now = new Date();
-            const diff = now - date;
-            const minutes = Math.floor(diff / 60000);
-            const hours = Math.floor(diff / 3600000);
-            const days = Math.floor(diff / 86400000);
-
-            if (minutes < 1) return 'Ahora mismo';
-            if (minutes < 60) return `Hace ${minutes}m`;
-            if (hours < 24) return `Hace ${hours}h`;
-            if (days < 7) return `Hace ${days}d`;
-            return date.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' });
-        }
-
-        function filterFeed(type, element) {
-            currentFilter = type;
-
-            // Update active state
-            document.querySelectorAll('.filter-chip').forEach(chip => chip.classList.remove('active'));
-            element.classList.add('active');
-
-            let filtered = [...allPrices];
-
-            if (type === 'offers') {
-                filtered = filtered.filter(p => p.es_oferta);
-            } else if (type === 'recent') {
-                const yesterday = new Date();
-                yesterday.setDate(yesterday.getDate() - 1);
-                filtered = filtered.filter(p => new Date(p.fecha) >= yesterday);
-            }
-
-            renderFeed(filtered);
-        }
-
-        function searchFeed(query) {
-            const lowerQ = query.toLowerCase();
-            if (!lowerQ) {
-                renderFeed(allPrices);
-                return;
-            }
-
-            const filtered = allPrices.filter(p =>
-                p.producto.toLowerCase().includes(lowerQ) ||
-                p.marca.toLowerCase().includes(lowerQ) ||
-                p.supermercado.toLowerCase().includes(lowerQ) ||
-                (p.categoria && p.categoria.toLowerCase().includes(lowerQ))
-            );
-
-            renderFeed(filtered);
-        }
-
-        async function editPrice(id) {
-            window.location.href = `add.html?edit=${id}`;
-        }
-
-        async function deletePrice(id) {
-            if (!confirm('¿Eliminar este registro de precio?')) return;
-
-            try {
-                await ApiService.deletePrecio(id);
-                init();
-            } catch (e) {
-                alert('Error al eliminar: ' + e);
-            }
-        }
-
-        document.addEventListener("DOMContentLoaded", init);
     </script>
 </body>
 
