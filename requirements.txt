@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+sqlalchemy
+python-multipart
+# Render / Production compatibility
+psycopg2-binary
+gunicorn
+# OAuth Support
+authlib
+itsdangerous
+httpx
+python-dotenv
+PyJWT

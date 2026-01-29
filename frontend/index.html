@@ -201,15 +201,17 @@
         }
 
         function handleLogin() {
-            console.log("Logging in via Google...");
+            console.log("Redirecting to Google Auth...");
             const btn = document.querySelector('.google-btn');
-            btn.innerHTML = '<i data-lucide="loader" class="animate-spin"></i> Conectando...';
+            btn.innerHTML = '<i data-lucide="loader" class="animate-spin"></i> Redirigiendo...';
             lucide.createIcons();
 
+            // Delay purely visual, then redirect to backend
             setTimeout(() => {
-                localStorage.setItem('auth_token', 'demo_google_token');
-                window.location.href = 'home.html';
-            }, 1000);
+                // Determine backend URL (fallback to 8000 if not set)
+                const backend = window.BACKEND_URL || 'http://127.0.0.1:8000';
+                window.location.href = `${backend}/login/google`;
+            }, 800);
         }
 
         function handleGuest() {

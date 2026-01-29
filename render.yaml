@@ -2,18 +2,26 @@ services:
   - type: web
     name: pricetracker-pro
     env: python
-    buildCommand: pip install -r backend/requirements.txt
+    buildCommand: pip install -r requirements.txt
     startCommand: bash start.sh
     envVars:
       - key: DB_HOST
-        value: "" # Configura esto en el panel de Render
+        value: "" 
       - key: DB_NAME
-        value: "" # Configura esto en el panel de Render
+        value: "" 
       - key: DB_USER
-        value: "" # Configura esto en el panel de Render
+        value: "" 
       - key: DB_PASSWORD
-        value: "" # Configura esto en el panel de Render
+        value: "" 
       - key: BACKEND_URL
-        value: "" # Configura esto con tu URL de Render (https://...)
+        value: "" # Tu URL de Render (https://...)
+      - key: GOOGLE_CLIENT_ID
+        value: ""
+      - key: GOOGLE_CLIENT_SECRET
+        value: ""
+      - key: SESSION_SECRET
+        value: "" # Genera una cadena aleatoria
+      - key: PYTHON_VERSION
+        value: 3.11.0
       - key: PYTHON_VERSION
         value: 3.11.0
