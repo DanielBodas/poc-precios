@@ -11,10 +11,11 @@
         // might not support deep paths easily without creating folders.
         // I'll create the folder structure just in case they navigate there manually.
         window.onload = function () {
+            const apiUrl = window.API_URL || '/'; // Fallback to root if API_URL is not defined
             setTimeout(() => {
-                window.location.href = "/index.html";
+                window.location.href = `${apiUrl}/index.html`;
             }, 1000);
-        }
+        };
     </script>
 </head>
 

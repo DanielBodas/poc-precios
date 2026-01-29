@@ -1,2 +1,5 @@
 /* Global Configuration */
-window.BACKEND_URL = "http://127.0.0.1:8000";
+// Cargar configuración dinámica desde el backend
+const script = document.createElement('script');
+script.src = '/config.js';
+document.head.appendChild(script);
