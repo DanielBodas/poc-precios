@@ -1,6 +1,6 @@
-from typing import List
+from typing import List, Optional
 from fastapi import FastAPI, Depends, HTTPException, Response, Request
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, FileResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
@@ -59,16 +59,53 @@ def create_access_token(data: dict):
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
-def get_current_user_email(token: str):
+def get_current_user(request: Request, db: Session = Depends(get_db)):
+    # Try to get token from Authorization header or from cookie
+    token = None
+    auth_header = request.headers.get('Authorization')
+    if auth_header and auth_header.startswith("Bearer "):
+        token = auth_header.split(" ")[1]
+    else:
+        token = request.cookies.get("access_token")
+
+    if not token:
+        return None
+
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         email: str = payload.get("sub")
         if email is None:
             return None
-        return email
+
+        user = db.query(models.User).filter(models.User.email == email).first()
+        return user
     except jwt.PyJWTError:
         return None
 
+def active_user(user: Optional[models.User] = Depends(get_current_user)):
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    return user
+
+def admin_user(user: models.User = Depends(active_user)):
+    if user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin role required")
+    return user
+
+
+@app.exception_handler(401)
+async def unauthorized_exception_handler(request: Request, exc: HTTPException):
+    if request.url.path.endswith(".html") or request.url.path == "/":
+        return RedirectResponse(url='/index.html')
+    return Response(content=json.dumps({"detail": "Not authenticated"}), status_code=401, media_type="application/json")
+
+@app.exception_handler(403)
+async def forbidden_exception_handler(request: Request, exc: HTTPException):
+    if request.url.path.endswith(".html"):
+        # For HTML, maybe redirect to home with a message?
+        # For now just return a simple HTML message
+        return HTMLResponse(content="<h1>403 Prohibido</h1><p>No tienes permisos para ver esta página.</p><a href='/home.html'>Volver al inicio</a>", status_code=403)
+    return Response(content=json.dumps({"detail": "Forbidden"}), status_code=403, media_type="application/json")
 
 # --- Dependency ---
 def get_db():
@@ -106,8 +143,12 @@ async def auth_google(request: Request, db: Session = Depends(get_db)):
         # Check if user exists
         user = db.query(models.User).filter(models.User.email == email).first()
         if not user:
+            # El primer usuario que se registre será admin
+            is_first = db.query(models.User).count() == 0
+            role = "admin" if is_first else "user"
+
             # Create new user
-            user = models.User(email=email, name=name, picture=picture, role="user")
+            user = models.User(email=email, name=name, picture=picture, role=role)
             db.add(user)
             db.commit()
             db.refresh(user)
@@ -122,34 +163,23 @@ async def auth_google(request: Request, db: Session = Depends(get_db)):
         # Create JWT Token
         access_token = create_access_token(data={"sub": user.email, "role": user.role, "id": user.id})
         
-        # Redirect to Frontend Home with Token
-        base_url = os.getenv('BACKEND_URL', 'http://127.0.0.1:8000')
-        # Assuming frontend is served statically or on a known port. 
-        # If frontend is separate (e.g. port 5500), we should redirect there.
-        # Ideally, use an allowed frontend origin from env.
-        frontend_url = "http://127.0.0.1:5500/frontend/home.html" # Default to typical local setup
-        # Or better: relative path if served by same origin
-        return RedirectResponse(url=f'/home.html?token={access_token}')
+        # Redirigir a Home y establecer cookie
+        response = RedirectResponse(url='/home.html')
+        response.set_cookie(
+            key="access_token",
+            value=access_token,
+            httponly=True,
+            max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+            samesite='lax'
+        )
+        return response
         
     except Exception as e:
         print(f"Auth Error: {e}")
         return Response(f"Authentication Failed: {str(e)}", status_code=400)
 
 @app.get("/users/me")
-def read_users_me(request: Request, db: Session = Depends(get_db)):
-    auth_header = request.headers.get('Authorization')
-    if not auth_header or not auth_header.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Not authenticated")
-    
-    token = auth_header.split(" ")[1]
-    email = get_current_user_email(token)
-    if not email:
-         raise HTTPException(status_code=401, detail="Invalid token")
-         
-    user = db.query(models.User).filter(models.User.email == email).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-        
+def read_users_me(user: models.User = Depends(active_user)):
     return {
         "id": user.id,
         "email": user.email,
@@ -157,6 +187,31 @@ def read_users_me(request: Request, db: Session = Depends(get_db)):
         "picture": user.picture,
         "role": user.role
     }
+
+# --- HTML Page Routes (Delegated Access) ---
+@app.get("/", response_class=FileResponse)
+def read_landing():
+    return FileResponse("frontend/landing.html")
+
+@app.get("/index.html", response_class=FileResponse)
+def read_login():
+    return FileResponse("frontend/index.html")
+
+@app.get("/home.html", response_class=FileResponse)
+def read_home(user: models.User = Depends(active_user)):
+    return FileResponse("frontend/home.html")
+
+@app.get("/add.html", response_class=FileResponse)
+def read_add(user: models.User = Depends(active_user)):
+    return FileResponse("frontend/add.html")
+
+@app.get("/catalog.html", response_class=FileResponse)
+def read_catalog(user: models.User = Depends(admin_user)):
+    return FileResponse("frontend/catalog.html")
+
+@app.get("/compare.html", response_class=FileResponse)
+def read_compare(user: models.User = Depends(active_user)):
+    return FileResponse("frontend/compare.html")
 
 
 # --- Endpoints de Configuración ---
@@ -180,11 +235,11 @@ app.add_middleware(
 
 # --- Catálogo: Categorías ---
 @app.get("/catalog/categorias", response_model=List[schemas.Categoria])
-def get_categorias(db: Session = Depends(get_db)):
+def get_categorias(db: Session = Depends(get_db), user: models.User = Depends(active_user)):
     return db.query(models.Categoria).order_by(models.Categoria.nombre).all()
 
 @app.post("/catalog/categorias", response_model=schemas.Categoria)
-def create_categoria(cat: schemas.CategoriaCreate, db: Session = Depends(get_db)):
+def create_categoria(cat: schemas.CategoriaCreate, db: Session = Depends(get_db), admin: models.User = Depends(admin_user)):
     nueva = models.Categoria(nombre=cat.nombre)
     db.add(nueva)
     db.commit()
@@ -192,18 +247,18 @@ def create_categoria(cat: schemas.CategoriaCreate, db: Session = Depends(get_db)
     return nueva
 
 @app.delete("/catalog/categorias/{id}")
-def delete_categoria(id: int, db: Session = Depends(get_db)):
+def delete_categoria(id: int, db: Session = Depends(get_db), admin: models.User = Depends(admin_user)):
     db.query(models.Categoria).filter(models.Categoria.id == id).delete()
     db.commit()
     return {"status": "ok"}
 
 # --- Catálogo: Marcas ---
 @app.get("/catalog/marcas", response_model=List[schemas.Marca])
-def get_marcas(db: Session = Depends(get_db)):
+def get_marcas(db: Session = Depends(get_db), user: models.User = Depends(active_user)):
     return db.query(models.Marca).order_by(models.Marca.nombre).all()
 
 @app.post("/catalog/marcas", response_model=schemas.Marca)
-def create_marca(marca: schemas.MarcaCreate, db: Session = Depends(get_db)):
+def create_marca(marca: schemas.MarcaCreate, db: Session = Depends(get_db), admin: models.User = Depends(admin_user)):
     nueva = models.Marca(nombre=marca.nombre)
     db.add(nueva)
     db.commit()
@@ -211,18 +266,18 @@ def create_marca(marca: schemas.MarcaCreate, db: Session = Depends(get_db)):
     return nueva
 
 @app.delete("/catalog/marcas/{id}")
-def delete_marca(id: int, db: Session = Depends(get_db)):
+def delete_marca(id: int, db: Session = Depends(get_db), admin: models.User = Depends(admin_user)):
     db.query(models.Marca).filter(models.Marca.id == id).delete()
     db.commit()
     return {"status": "ok"}
 
 # --- Catálogo: Unidades ---
 @app.get("/catalog/unidades", response_model=List[schemas.Unidad])
-def get_unidades(db: Session = Depends(get_db)):
+def get_unidades(db: Session = Depends(get_db), user: models.User = Depends(active_user)):
     return db.query(models.Unidad).order_by(models.Unidad.nombre).all()
 
 @app.post("/catalog/unidades", response_model=schemas.Unidad)
-def create_unidad(uni: schemas.UnidadCreate, db: Session = Depends(get_db)):
+def create_unidad(uni: schemas.UnidadCreate, db: Session = Depends(get_db), admin: models.User = Depends(admin_user)):
     nueva = models.Unidad(nombre=uni.nombre)
     db.add(nueva)
     db.commit()
@@ -230,18 +285,18 @@ def create_unidad(uni: schemas.UnidadCreate, db: Session = Depends(get_db)):
     return nueva
 
 @app.delete("/catalog/unidades/{id}")
-def delete_unidad(id: int, db: Session = Depends(get_db)):
+def delete_unidad(id: int, db: Session = Depends(get_db), admin: models.User = Depends(admin_user)):
     db.query(models.Unidad).filter(models.Unidad.id == id).delete()
     db.commit()
     return {"status": "ok"}
 
 # --- Catálogo: Supermercados ---
 @app.get("/catalog/supermercados", response_model=List[schemas.Supermercado])
-def get_supermercados(db: Session = Depends(get_db)):
+def get_supermercados(db: Session = Depends(get_db), user: models.User = Depends(active_user)):
     return db.query(models.Supermercado).order_by(models.Supermercado.nombre).all()
 
 @app.post("/catalog/supermercados", response_model=schemas.Supermercado)
-def create_super(sup: schemas.SupermercadoCreate, db: Session = Depends(get_db)):
+def create_super(sup: schemas.SupermercadoCreate, db: Session = Depends(get_db), admin: models.User = Depends(admin_user)):
     nuevo = models.Supermercado(nombre=sup.nombre)
     db.add(nuevo)
     db.commit()
@@ -249,18 +304,18 @@ def create_super(sup: schemas.SupermercadoCreate, db: Session = Depends(get_db))
     return nuevo
 
 @app.delete("/catalog/supermercados/{id}")
-def delete_super(id: int, db: Session = Depends(get_db)):
+def delete_super(id: int, db: Session = Depends(get_db), admin: models.User = Depends(admin_user)):
     db.query(models.Supermercado).filter(models.Supermercado.id == id).delete()
     db.commit()
     return {"status": "ok"}
 
 # --- Catálogo: Productos ---
 @app.get("/catalog/productos", response_model=List[schemas.Producto])
-def get_productos(db: Session = Depends(get_db)):
+def get_productos(db: Session = Depends(get_db), user: models.User = Depends(active_user)):
     return db.query(models.Producto).all()
 
 @app.post("/catalog/productos", response_model=schemas.Producto)
-def create_producto(prod: schemas.ProductoCreate, db: Session = Depends(get_db)):
+def create_producto(prod: schemas.ProductoCreate, db: Session = Depends(get_db), admin: models.User = Depends(admin_user)):
     print(f"DEBUG: Creating product with name='{prod.nombre}', categoria_ids={prod.categoria_ids}, unidad_ids={prod.unidad_ids}, marca_ids={prod.marca_ids}")
     
     if not prod.nombre or not prod.nombre.strip():
@@ -293,14 +348,14 @@ def create_producto(prod: schemas.ProductoCreate, db: Session = Depends(get_db))
     return nuevo
 
 @app.delete("/catalog/productos/{id}")
-def delete_producto(id: int, db: Session = Depends(get_db)):
+def delete_producto(id: int, db: Session = Depends(get_db), admin: models.User = Depends(admin_user)):
     db.query(models.Producto).filter(models.Producto.id == id).delete()
     db.commit()
     return {"status": "ok"}
 
 # --- Relaciones Producto-Categoria ---
 @app.post("/catalog/productos/{producto_id}/categorias/{categoria_id}")
-def link_producto_categoria(producto_id: int, categoria_id: int, db: Session = Depends(get_db)):
+def link_producto_categoria(producto_id: int, categoria_id: int, db: Session = Depends(get_db), admin: models.User = Depends(admin_user)):
     prod = db.query(models.Producto).filter(models.Producto.id == producto_id).first()
     cat = db.query(models.Categoria).filter(models.Categoria.id == categoria_id).first()
     if not prod or not cat: raise HTTPException(404, "No existe producto o categoría")
@@ -310,7 +365,7 @@ def link_producto_categoria(producto_id: int, categoria_id: int, db: Session = D
     return {"status": "ok"}
 
 @app.delete("/catalog/productos/{producto_id}/categorias/{categoria_id}")
-def unlink_producto_categoria(producto_id: int, categoria_id: int, db: Session = Depends(get_db)):
+def unlink_producto_categoria(producto_id: int, categoria_id: int, db: Session = Depends(get_db), admin: models.User = Depends(admin_user)):
     prod = db.query(models.Producto).filter(models.Producto.id == producto_id).first()
     cat = db.query(models.Categoria).filter(models.Categoria.id == categoria_id).first()
     if prod and cat and cat in prod.categorias:
@@ -320,7 +375,7 @@ def unlink_producto_categoria(producto_id: int, categoria_id: int, db: Session =
 
 # --- Relaciones Producto-Unidad ---
 @app.post("/catalog/productos/{producto_id}/unidades/{unidad_id}")
-def link_producto_unidad(producto_id: int, unidad_id: int, db: Session = Depends(get_db)):
+def link_producto_unidad(producto_id: int, unidad_id: int, db: Session = Depends(get_db), admin: models.User = Depends(admin_user)):
     prod = db.query(models.Producto).filter(models.Producto.id == producto_id).first()
     unit = db.query(models.Unidad).filter(models.Unidad.id == unidad_id).first()
     if not prod or not unit: raise HTTPException(404, "No existe producto o unidad")
@@ -330,7 +385,7 @@ def link_producto_unidad(producto_id: int, unidad_id: int, db: Session = Depends
     return {"status": "ok"}
 
 @app.delete("/catalog/productos/{producto_id}/unidades/{unidad_id}")
-def unlink_producto_unidad(producto_id: int, unidad_id: int, db: Session = Depends(get_db)):
+def unlink_producto_unidad(producto_id: int, unidad_id: int, db: Session = Depends(get_db), admin: models.User = Depends(admin_user)):
     prod = db.query(models.Producto).filter(models.Producto.id == producto_id).first()
     unit = db.query(models.Unidad).filter(models.Unidad.id == unidad_id).first()
     if prod and unit and unit in prod.unidades:
@@ -340,7 +395,7 @@ def unlink_producto_unidad(producto_id: int, unidad_id: int, db: Session = Depen
 
 # --- Relaciones Producto-Marca ---
 @app.post("/catalog/productos/{producto_id}/marcas/{marca_id}")
-def link_producto_marca(producto_id: int, marca_id: int, db: Session = Depends(get_db)):
+def link_producto_marca(producto_id: int, marca_id: int, db: Session = Depends(get_db), admin: models.User = Depends(admin_user)):
     prod = db.query(models.Producto).filter(models.Producto.id == producto_id).first()
     marca = db.query(models.Marca).filter(models.Marca.id == marca_id).first()
     if not prod or not marca: raise HTTPException(404, "No existe producto o marca")
@@ -350,7 +405,7 @@ def link_producto_marca(producto_id: int, marca_id: int, db: Session = Depends(g
     return {"status": "ok"}
 
 @app.delete("/catalog/productos/{producto_id}/marcas/{marca_id}")
-def unlink_producto_marca(producto_id: int, marca_id: int, db: Session = Depends(get_db)):
+def unlink_producto_marca(producto_id: int, marca_id: int, db: Session = Depends(get_db), admin: models.User = Depends(admin_user)):
     prod = db.query(models.Producto).filter(models.Producto.id == producto_id).first()
     marca = db.query(models.Marca).filter(models.Marca.id == marca_id).first()
     if prod and marca and marca in prod.marcas:
@@ -360,7 +415,7 @@ def unlink_producto_marca(producto_id: int, marca_id: int, db: Session = Depends
 
 # --- Registros de Precios ---
 @app.post("/precios", status_code=201)
-def crear_precio(precio: schemas.PrecioCreate, db: Session = Depends(get_db)):
+def crear_precio(precio: schemas.PrecioCreate, db: Session = Depends(get_db), user: models.User = Depends(active_user)):
     p_unidad = precio.precio_total / precio.cantidad if precio.cantidad > 0 else 0
     nuevo = models.Precio(
         producto_id=precio.producto_id,
@@ -379,7 +434,7 @@ def crear_precio(precio: schemas.PrecioCreate, db: Session = Depends(get_db)):
     return {"status": "ok"}
 
 @app.get("/precios", response_model=List[schemas.PrecioDisplay])
-def listar_precios(db: Session = Depends(get_db)):
+def listar_precios(db: Session = Depends(get_db), user: models.User = Depends(active_user)):
     precios = db.query(models.Precio).order_by(models.Precio.id.desc()).all()
     res = []
     for p in precios:
@@ -408,7 +463,7 @@ def listar_precios(db: Session = Depends(get_db)):
     return res
 
 @app.get("/precios/{id}", response_model=schemas.PrecioDisplay)
-def get_precio(id: int, db: Session = Depends(get_db)):
+def get_precio(id: int, db: Session = Depends(get_db), user: models.User = Depends(active_user)):
     p = db.query(models.Precio).filter(models.Precio.id == id).first()
     if not p: raise HTTPException(404, "No existe")
     if not p.producto_rel or not p.marca_rel or not p.supermercado_rel:
@@ -434,7 +489,7 @@ def get_precio(id: int, db: Session = Depends(get_db)):
     }
 
 @app.put("/precios/{id}")
-def update_precio(id: int, data: schemas.PrecioUpdate, db: Session = Depends(get_db)):
+def update_precio(id: int, data: schemas.PrecioUpdate, db: Session = Depends(get_db), user: models.User = Depends(active_user)):
     p = db.query(models.Precio).filter(models.Precio.id == id).first()
     if not p: raise HTTPException(404, "No existe")
     
@@ -448,13 +503,13 @@ def update_precio(id: int, data: schemas.PrecioUpdate, db: Session = Depends(get
     return {"status": "ok"}
 
 @app.delete("/precios/{id}")
-def delete_precio(id: int, db: Session = Depends(get_db)):
+def delete_precio(id: int, db: Session = Depends(get_db), user: models.User = Depends(active_user)):
     db.query(models.Precio).filter(models.Precio.id == id).delete()
     db.commit()
     return {"status": "ok"}
 
 @app.get("/precios/producto/{prod_id}", response_model=List[schemas.PrecioDisplay])
-def historial_producto(prod_id: int, db: Session = Depends(get_db)):
+def historial_producto(prod_id: int, db: Session = Depends(get_db), user: models.User = Depends(active_user)):
     precios = db.query(models.Precio).filter(models.Precio.producto_id == prod_id).order_by(models.Precio.id.desc()).all()
     res = []
     for p in precios:
@@ -518,4 +573,4 @@ def seed_data():
     finally:
         db.close()
 
-app.mount("/", StaticFiles(directory="frontend", html=True), name="frontend")
+app.mount("/", StaticFiles(directory="frontend", html=False), name="frontend")
