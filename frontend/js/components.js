@@ -1,29 +1,16 @@
 (function () {
-    // 1. Check URL for token (OAuth callback from Backend)
+    // Auth Guard now handled primarily by Backend (FileResponse + Depends)
+    // But we still handle the old token from URL just in case
     const urlParams = new URLSearchParams(window.location.search);
     const tokenFromUrl = urlParams.get('token');
     if (tokenFromUrl) {
         localStorage.setItem('auth_token', tokenFromUrl);
-        // Clean URL so token doesn't persist in browser history
         const newUrl = window.location.pathname;
         window.history.replaceState({}, document.title, newUrl);
     }
-
-    // 2. Auth Guard Logic
-    const isLoginPage = window.location.pathname.endsWith('index.html') || window.location.pathname === '/' || window.location.pathname.endsWith('/');
-    const token = localStorage.getItem('auth_token');
-
-    // If we are NOT on login page and have NO token, redirect to login
-    if (!isLoginPage && !token) {
-        window.location.href = 'index.html';
-    }
-    // If we ARE on login page and HAVE token, redirect to home
-    if (isLoginPage && token) {
-        window.location.href = 'home.html';
-    }
 })();
 
-function initLayout() {
+async function initLayout() {
     const path = window.location.pathname;
 
     // Determine current page status for active link
@@ -36,6 +23,19 @@ function initLayout() {
     const isHome = path.includes('home');
 
     const isDashboard = isHome || (!isCatalog && !isCompare && !isAdd);
+
+    // Get User Role to show/hide menu items
+    let userRole = 'user';
+    try {
+        if (window.ApiService) {
+            const userData = await ApiService._fetch(`${window.API_URL || ''}/users/me`).then(r => r ? r.json() : null);
+            if (userData) {
+                userRole = userData.role;
+            }
+        }
+    } catch (e) {
+        console.error("Error getting user role:", e);
+    }
 
     const existingNav = document.querySelector('nav.main-nav');
     if (existingNav) existingNav.remove();
@@ -79,10 +79,12 @@ function initLayout() {
                 <i data-lucide="home"></i>
                 <span class="menu-text">Inicio</span>
             </a>
+            ${userRole === 'admin' ? `
             <a href="catalog.html" class="menu-item ${isCatalog ? 'active' : ''}" title="Catálogo Maestro">
                 <i data-lucide="database"></i>
                 <span class="menu-text">Catálogo Maestro</span>
             </a>
+            ` : ''}
             <a href="compare.html" class="menu-item ${isCompare ? 'active' : ''}" title="Comparador">
                 <i data-lucide="bar-chart-2"></i>
                 <span class="menu-text">Comparador</span>
@@ -98,7 +100,7 @@ function initLayout() {
                 <span class="menu-text">Guardados</span>
             </a>
              <div style="margin-top:auto;"></div>
-               <a href="index.html" onclick="localStorage.removeItem('auth_token');" class="menu-item" style="color:var(--danger);" title="Cerrar Sesión">
+               <a href="index.html" onclick="localStorage.removeItem('auth_token'); document.cookie = 'access_token=; Max-Age=0; path=/;'; " class="menu-item" style="color:var(--danger);" title="Cerrar Sesión">
                 <i data-lucide="log-out"></i>
                 <span class="menu-text">Cerrar Sesión</span>
             </a>

@@ -2,23 +2,37 @@
 const API_URL = window.BACKEND_URL || ((window.location.port === "5500" || window.location.port === "5501") ? "http://127.0.0.1:8000" : "");
 
 const ApiService = {
+    async _fetch(url, options = {}) {
+        options.credentials = 'include'; // Essential for sending/receiving cookies
+        const res = await fetch(url, options);
+        if (res.status === 401) {
+            window.location.href = 'index.html';
+            return;
+        }
+        if (res.status === 403) {
+            alert("No tienes permisos para realizar esta acción.");
+            return;
+        }
+        return res;
+    },
+
     async getPrecios() {
-        const res = await fetch(`${API_URL}/precios`);
+        const res = await this._fetch(`${API_URL}/precios`);
         return await res.json();
     },
 
     async getPrecio(id) {
-        const res = await fetch(`${API_URL}/precios/${id}`);
+        const res = await this._fetch(`${API_URL}/precios/${id}`);
         return await res.json();
     },
 
     async getPrecioHistorial(prodId) {
-        const res = await fetch(`${API_URL}/precios/producto/${prodId}`);
+        const res = await this._fetch(`${API_URL}/precios/producto/${prodId}`);
         return await res.json();
     },
 
     async createPrecio(datos) {
-        const res = await fetch(`${API_URL}/precios`, {
+        const res = await this._fetch(`${API_URL}/precios`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(datos)
@@ -27,7 +41,7 @@ const ApiService = {
     },
 
     async updatePrecio(id, datos) {
-        const res = await fetch(`${API_URL}/precios/${id}`, {
+        const res = await this._fetch(`${API_URL}/precios/${id}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(datos)
@@ -36,38 +50,38 @@ const ApiService = {
     },
 
     async deletePrecio(id) {
-        return fetch(`${API_URL}/precios/${id}`, { method: "DELETE" });
+        return this._fetch(`${API_URL}/precios/${id}`, { method: "DELETE" });
     },
 
     // Catálogo
     async getCatalogProductos() {
-        const res = await fetch(`${API_URL}/catalog/productos`);
+        const res = await this._fetch(`${API_URL}/catalog/productos`);
         return await res.json();
     },
 
     async getCatalogSupermercados() {
-        const res = await fetch(`${API_URL}/catalog/supermercados`);
+        const res = await this._fetch(`${API_URL}/catalog/supermercados`);
         return await res.json();
     },
 
     async getCatalogMarcas() {
-        const res = await fetch(`${API_URL}/catalog/marcas`);
+        const res = await this._fetch(`${API_URL}/catalog/marcas`);
         return await res.json();
     },
 
     async getCatalogCategorias() {
-        const res = await fetch(`${API_URL}/catalog/categorias`);
+        const res = await this._fetch(`${API_URL}/catalog/categorias`);
         return await res.json();
     },
 
     async getCatalogUnidades() {
-        const res = await fetch(`${API_URL}/catalog/unidades`);
+        const res = await this._fetch(`${API_URL}/catalog/unidades`);
         return await res.json();
     },
 
     // Create & Delete Helpers
     async createCategoria(nombre) {
-        return fetch(`${API_URL}/catalog/categorias`, {
+        return this._fetch(`${API_URL}/catalog/categorias`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ nombre })
@@ -75,7 +89,7 @@ const ApiService = {
     },
 
     async createMarca(nombre) {
-        return fetch(`${API_URL}/catalog/marcas`, {
+        return this._fetch(`${API_URL}/catalog/marcas`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ nombre })
@@ -83,7 +97,7 @@ const ApiService = {
     },
 
     async createSupermercado(nombre) {
-        return fetch(`${API_URL}/catalog/supermercados`, {
+        return this._fetch(`${API_URL}/catalog/supermercados`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ nombre })
@@ -91,7 +105,7 @@ const ApiService = {
     },
 
     async createUnidad(nombre) {
-        return fetch(`${API_URL}/catalog/unidades`, {
+        return this._fetch(`${API_URL}/catalog/unidades`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ nombre })
@@ -99,7 +113,7 @@ const ApiService = {
     },
 
     async createProducto(nombre, categoria_ids, unidad_ids, marca_ids) {
-        const response = await fetch(`${API_URL}/catalog/productos`, {
+        const response = await this._fetch(`${API_URL}/catalog/productos`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -118,60 +132,45 @@ const ApiService = {
         return await response.json();
     },
 
-    async deleteCategoria(id) { return fetch(`${API_URL}/catalog/categorias/${id}`, { method: "DELETE" }); },
-    async deleteMarca(id) { return fetch(`${API_URL}/catalog/marcas/${id}`, { method: "DELETE" }); },
-    async deleteSupermercado(id) { return fetch(`${API_URL}/catalog/supermercados/${id}`, { method: "DELETE" }); },
-    async deleteUnidad(id) { return fetch(`${API_URL}/catalog/unidades/${id}`, { method: "DELETE" }); },
-    async deleteProducto(id) { return fetch(`${API_URL}/catalog/productos/${id}`, { method: "DELETE" }); },
-
-    // Relaciones (obsoletas para creación pero se mantienen por compatibilidad si fuese necesario)
-    async linkProductoMarca(producto_id, marca_id) {
-        return fetch(`${API_URL}/catalog/relacionar-producto-marca`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ producto_id: parseInt(producto_id), marca_id: parseInt(marca_id) })
-        }).then(res => res.json());
-    },
-
-    async unlinkProductoMarca(producto_id, marca_id) {
-        return fetch(`${API_URL}/catalog/desvincular-producto-marca?producto_id=${producto_id}&marca_id=${marca_id}`, {
-            method: "DELETE"
-        }).then(res => res.json());
-    },
+    async deleteCategoria(id) { return this._fetch(`${API_URL}/catalog/categorias/${id}`, { method: "DELETE" }); },
+    async deleteMarca(id) { return this._fetch(`${API_URL}/catalog/marcas/${id}`, { method: "DELETE" }); },
+    async deleteSupermercado(id) { return this._fetch(`${API_URL}/catalog/supermercados/${id}`, { method: "DELETE" }); },
+    async deleteUnidad(id) { return this._fetch(`${API_URL}/catalog/unidades/${id}`, { method: "DELETE" }); },
+    async deleteProducto(id) { return this._fetch(`${API_URL}/catalog/productos/${id}`, { method: "DELETE" }); },
 
     // Relaciones específicas (nuevas)
     async linkCategoria(producto_id, categoria_id) {
-        return fetch(`${API_URL}/catalog/productos/${producto_id}/categorias/${categoria_id}`, {
+        return this._fetch(`${API_URL}/catalog/productos/${producto_id}/categorias/${categoria_id}`, {
             method: "POST"
         }).then(res => res.json());
     },
 
     async unlinkCategoria(producto_id, categoria_id) {
-        return fetch(`${API_URL}/catalog/productos/${producto_id}/categorias/${categoria_id}`, {
+        return this._fetch(`${API_URL}/catalog/productos/${producto_id}/categorias/${categoria_id}`, {
             method: "DELETE"
         }).then(res => res.json());
     },
 
     async linkUnidad(producto_id, unidad_id) {
-        return fetch(`${API_URL}/catalog/productos/${producto_id}/unidades/${unidad_id}`, {
+        return this._fetch(`${API_URL}/catalog/productos/${producto_id}/unidades/${unidad_id}`, {
             method: "POST"
         }).then(res => res.json());
     },
 
     async unlinkUnidad(producto_id, unidad_id) {
-        return fetch(`${API_URL}/catalog/productos/${producto_id}/unidades/${unidad_id}`, {
+        return this._fetch(`${API_URL}/catalog/productos/${producto_id}/unidades/${unidad_id}`, {
             method: "DELETE"
         }).then(res => res.json());
     },
 
     async linkMarca(producto_id, marca_id) {
-        return fetch(`${API_URL}/catalog/productos/${producto_id}/marcas/${marca_id}`, {
+        return this._fetch(`${API_URL}/catalog/productos/${producto_id}/marcas/${marca_id}`, {
             method: "POST"
         }).then(res => res.json());
     },
 
     async unlinkMarca(producto_id, marca_id) {
-        return fetch(`${API_URL}/catalog/productos/${producto_id}/marcas/${marca_id}`, {
+        return this._fetch(`${API_URL}/catalog/productos/${producto_id}/marcas/${marca_id}`, {
             method: "DELETE"
         }).then(res => res.json());
     }

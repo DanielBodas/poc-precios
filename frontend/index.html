@@ -179,13 +179,6 @@
             Continuar con Google
         </button>
 
-        <div class="divider">O entra como invitado</div>
-
-        <button onclick="handleGuest()"
-            style="background:transparent; border:1px solid rgba(0,0,0,0.1); color:var(--text-muted); padding:0.85rem; font-weight:600; margin-top:0; width: 100%; border-radius:12px; cursor:pointer;">
-            Acceso Demo (Sin cuenta)
-        </button>
-
         <div class="auth-footer">
             Al continuar, aceptas nuestros <a href="#">Términos</a> y <a href="#">Privacidad</a>.
         </div>
@@ -214,10 +207,6 @@
             }, 800);
         }
 
-        function handleGuest() {
-            localStorage.setItem('auth_token', 'demo_guest_token');
-            window.location.href = 'home.html';
-        }
     </script>
 </body>
 
