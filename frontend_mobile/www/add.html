@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nuevo Registro — PriceTracker Pro</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="css/main.css">
+</head>
+
+<body>
+    <!-- components.js inserts Navbar & Sidebar -->
+
+    <div class="layout-container no-widgets">
+        <main>
+            <div style="max-width: 600px; margin: 0 auto;">
+                <h1 id="title" class="page-title" style="margin-bottom: 2rem; text-align: center;">Registrar Precio</h1>
+
+                <form id="p-form" class="card">
+                    <div class="form-group">
+                        <label>Producto Maestro</label>
+                        <input type="text" id="p-search-input" placeholder="🔍 Buscar producto..."
+                            onkeyup="filterProducts(this.value)" style="margin-bottom:0.5rem;" autocomplete="off">
+                        <select id="p-id" required>
+                            <option value="">Selecciona...</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Marca / Fabricante</label>
+                        <select id="m-id" required>
+                            <option value="">Elige producto primero...</option>
+                        </select>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label>Cantidad</label>
+                            <input id="q" type="number" step="0.001" placeholder="Ej: 1.5" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Unidad</label>
+                            <select id="u" required></select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Establecimiento</label>
+                        <select id="s-id" required></select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Precio Pagado (€)</label>
+                        <input id="t-price" type="number" step="0.01" placeholder="0.00" required
+                            style="font-size: 1.2rem; font-weight: 700;">
+                    </div>
+
+                    <div class="form-group"
+                        style="background:#f8fafc; padding:1rem; border-radius:12px; display:flex; align-items:center; gap:0.75rem; border:1px solid rgba(0,0,0,0.05);">
+                        <input type="checkbox" id="is-off"
+                            style="width:20px; height:20px; accent-color:var(--primary);">
+                        <label for="is-off" style="margin:0; cursor:pointer;">¿Está de Oferta?</label>
+                    </div>
+
+                    <div id="off-box" class="form-group" style="display:none; margin-top:1rem;">
+                        <label>Detalle (ej: 3x2, 2ª unidad al 50%)</label>
+                        <input id="off-detail" type="text" placeholder="Describe la oferta...">
+                    </div>
+
+                    <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                        <button type="button" onclick="window.history.back()"
+                            style="background: transparent; border: 1px solid rgba(0,0,0,0.1); color: var(--text-muted); width: 30%;">
+                            Cancelar
+                        </button>
+                        <button type="submit" id="btn-save" style="flex: 1;">
+                            <i data-lucide="check-circle" style="width: 20px;"></i>
+                            <span>Publicar Precio</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </main>
+    </div>
+
+    <script src="config.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/components.js"></script>
+    <script>
+        let editId = new URLSearchParams(window.location.search).get('edit'); // Changed from 'id' to 'edit' to match index.html link
+        let products = [];
+        const UNITS_FALLBACK = ['kg', 'g', 'L', 'ml', 'ud', 'pack'];
+
+        async function init() {
+            try {
+                const [prods, supers] = await Promise.all([ApiService.getCatalogProductos(), ApiService.getCatalogSupermercados()]);
+                products = prods.sort((a, b) => a.nombre.localeCompare(b.nombre));
+
+                updateProductSelect(products);
+
+                const sSel = document.getElementById("s-id");
+                sSel.innerHTML = supers.sort((a, b) => a.nombre.localeCompare(b.nombre)).map(s => `<option value="${s.id}">${s.nombre}</option>`).join('');
+
+                const pSel = document.getElementById("p-id");
+                pSel.onchange = sync;
+                document.getElementById("is-off").onchange = (e) => document.getElementById("off-box").style.display = e.target.checked ? 'block' : 'none';
+
+                if (editId) {
+                    document.getElementById("title").textContent = "Editar Precio";
+                    document.getElementById("btn-save").innerHTML = '<span>Actualizar</span>';
+                    await load();
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        function updateProductSelect(filtered) {
+            const pSel = document.getElementById("p-id");
+            const currentVal = pSel.value;
+            pSel.innerHTML = '<option value="">Selecciona...</option>' + filtered.map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
+            if (filtered.find(x => x.id == currentVal)) pSel.value = currentVal;
+        }
+
+        function filterProducts(q) {
+            const lowerQ = q.toLowerCase();
+            const filtered = products.filter(p => p.nombre.toLowerCase().includes(lowerQ));
+            updateProductSelect(filtered);
+        }
+
+        function sync() {
+            const val = document.getElementById("p-id").value;
+            const p = products.find(x => x.id == val);
+            const mSel = document.getElementById("m-id");
+            const uSel = document.getElementById("u");
+
+            if (!p) {
+                mSel.innerHTML = '<option value="">Elige producto primero...</option>';
+                uSel.innerHTML = '';
+                return;
+            };
+
+            mSel.innerHTML = (p.marcas && p.marcas.length > 0)
+                ? p.marcas.map(m => `<option value="${m.id}">${m.nombre}</option>`).join('')
+                : '<option value="">Sin marcas vinculadas</option>'; // Better handling if empty? Actually user might need to create one, but let's stick to simple for now. Ideally should allow 'Other'
+
+            const allowed = (p.unidades && p.unidades.length > 0) ? p.unidades.map(u => u.nombre) : UNITS_FALLBACK;
+            uSel.innerHTML = allowed.map(u => `<option value="${u}">${u}</option>`).join('');
+        }
+
+        async function load() {
+            const d = await ApiService.getPrecio(editId);
+            document.getElementById("p-id").value = d.producto_id;
+            sync(); // load brands/units
+
+            // Wait a tick for sync/dom update? usually synchronous
+            setTimeout(() => {
+                document.getElementById("m-id").value = d.marca_id;
+                document.getElementById("u").value = d.unidad;
+            }, 50);
+
+            document.getElementById("q").value = d.cantidad;
+            document.getElementById("s-id").value = d.supermercado_id;
+            document.getElementById("t-price").value = d.precio_total;
+            document.getElementById("is-off").checked = d.es_oferta;
+            if (d.es_oferta) document.getElementById("off-box").style.display = 'block';
+            document.getElementById("off-detail").value = d.tipo_oferta || "";
+        }
+
+        document.getElementById("p-form").onsubmit = async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById("btn-save");
+            btn.disabled = true;
+            btn.innerHTML = 'Guardando...';
+
+            const payload = {
+                producto_id: parseInt(document.getElementById("p-id").value),
+                marca_id: parseInt(document.getElementById("m-id").value),
+                supermercado_id: parseInt(document.getElementById("s-id").value),
+                cantidad: parseFloat(document.getElementById("q").value),
+                unidad: document.getElementById("u").value,
+                precio_total: parseFloat(document.getElementById("t-price").value),
+                es_oferta: document.getElementById("is-off").checked,
+                tipo_oferta: document.getElementById("off-detail").value || null
+            };
+            try {
+                if (editId) await ApiService.updatePrecio(editId, payload);
+                else await ApiService.createPrecio(payload);
+                window.location.href = "index.html";
+            } catch (e) {
+                alert("Error: " + e);
+                btn.disabled = false;
+                btn.innerHTML = 'Intentar de nuevo';
+            }
+        };
+
+        document.addEventListener("DOMContentLoaded", init);
+    </script>
+</body>
+
+</html>

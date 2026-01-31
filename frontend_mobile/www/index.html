@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iniciar Sesión — PriceTracker Pro</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="css/main.css">
+    <style>
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #f0f2f5 0%, #e0e7ff 100%);
+            padding: 1.5rem;
+        }
+
+        /* Hide default injected nav/sidebar for login page */
+        .main-nav,
+        .sidebar-left {
+            display: none !important;
+        }
+
+        .login-card {
+            background: white;
+            padding: 3rem 2.5rem;
+            border-radius: 24px;
+            box-shadow: 0 20px 40px -5px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 420px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        .login-logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.75rem;
+            font-weight: 800;
+            background: linear-gradient(to right, var(--primary), #ec4899);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        .login-subtitle {
+            color: var(--text-muted);
+            margin-bottom: 2.5rem;
+            font-size: 0.95rem;
+        }
+
+        .google-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            width: 100%;
+            padding: 0.85rem;
+            border-radius: 12px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            background: white;
+            color: var(--text-main);
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+
+        .google-btn:hover {
+            background: #f9fafb;
+            border-color: rgba(0, 0, 0, 0.2);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            margin: 1.5rem 0;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: "";
+            flex: 1;
+            height: 1px;
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        .divider::before {
+            margin-right: 1rem;
+        }
+
+        .divider::after {
+            margin-left: 1rem;
+        }
+
+        .auth-footer {
+            margin-top: 2rem;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .auth-footer a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .feature-list {
+            text-align: left;
+            margin-bottom: 2rem;
+            background: #f8fafc;
+            padding: 1.25rem;
+            border-radius: 16px;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+            font-size: 0.9rem;
+            color: var(--text-main);
+            font-weight: 500;
+        }
+
+        .feature-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .feature-item i {
+            color: var(--success);
+            width: 18px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="login-card animate-in">
+        <div class="login-logo">
+            <i data-lucide="scan-line" style="-webkit-text-fill-color: initial; color: var(--primary);"></i>
+            PriceTracker Pro
+        </div>
+        <p class="login-subtitle">Tu red social para el seguimiento de precios</p>
+
+        <div class="feature-list">
+            <div class="feature-item">
+                <i data-lucide="check-circle-2"></i>
+                <span>Comparte ofertas en tiempo real</span>
+            </div>
+            <div class="feature-item">
+                <i data-lucide="check-circle-2"></i>
+                <span>Compara precios entre supermercados</span>
+            </div>
+            <div class="feature-item">
+                <i data-lucide="check-circle-2"></i>
+                <span>Ahorra en tu cesta de la compra</span>
+            </div>
+        </div>
+
+        <button class="google-btn" onclick="handleLogin()">
+            <img src="https://www.svgrepo.com/show/475656/google-color.svg" width="24" height="24" alt="Google">
+            Continuar con Google
+        </button>
+
+        <div class="divider">O entra como invitado</div>
+
+        <button onclick="handleGuest()"
+            style="background:transparent; border:1px solid rgba(0,0,0,0.1); color:var(--text-muted); padding:0.85rem; font-weight:600; margin-top:0; width: 100%; border-radius:12px; cursor:pointer;">
+            Acceso Demo (Sin cuenta)
+        </button>
+
+        <div class="auth-footer">
+            Al continuar, aceptas nuestros <a href="#">Términos</a> y <a href="#">Privacidad</a>.
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        lucide.createIcons();
+
+        // Redirect if already logged in
+        if (localStorage.getItem('auth_token')) {
+            window.location.href = 'home.html';
+        }
+
+        function handleLogin() {
+            console.log("Redirecting to Google Auth...");
+            const btn = document.querySelector('.google-btn');
+            btn.innerHTML = '<i data-lucide="loader" class="animate-spin"></i> Redirigiendo...';
+            lucide.createIcons();
+
+            // Delay purely visual, then redirect to backend
+            setTimeout(() => {
+                // Determine backend URL (fallback to 8000 if not set)
+                const backend = window.BACKEND_URL || 'http://127.0.0.1:8000';
+                window.location.href = `${backend}/login/google`;
+            }, 800);
+        }
+
+        function handleGuest() {
+            localStorage.setItem('auth_token', 'demo_guest_token');
+            window.location.href = 'home.html';
+        }
+    </script>
+</body>
+
+</html>
