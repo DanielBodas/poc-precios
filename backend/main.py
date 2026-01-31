@@ -167,7 +167,11 @@ def get_config():
     if backend_url.endswith('/'): backend_url = backend_url[:-1]
     print(f"DEBUG: Serving config.js with BACKEND_URL='{backend_url}'")
     content = f"window.BACKEND_URL = '{backend_url}';"
-    return Response(content=content, media_type="application/javascript")
+    return Response(
+        content=content,
+        media_type="application/javascript",
+        headers={"Cache-Control": "no-cache, no-store, must-revalidate"}
+    )
 
 @app.get("/health")
 def health_check():
