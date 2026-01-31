@@ -185,13 +185,9 @@
     </div>
 
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="config.js"></script>
     <script>
         lucide.createIcons();
-
-        // Redirect if already logged in
-        if (localStorage.getItem('auth_token')) {
-            window.location.href = 'home.html';
-        }
 
         function handleLogin() {
             console.log("Redirecting to Google Auth...");

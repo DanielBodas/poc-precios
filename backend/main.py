@@ -59,6 +59,12 @@ def create_access_token(data: dict):
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
+# --- Dependency ---
+def get_db():
+    db = SessionLocal()
+    try: yield db
+    finally: db.close()
+
 def get_current_user(request: Request, db: Session = Depends(get_db)):
     # Try to get token from Authorization header or from cookie
     token = None
@@ -106,12 +112,6 @@ async def forbidden_exception_handler(request: Request, exc: HTTPException):
         # For now just return a simple HTML message
         return HTMLResponse(content="<h1>403 Prohibido</h1><p>No tienes permisos para ver esta página.</p><a href='/home.html'>Volver al inicio</a>", status_code=403)
     return Response(content=json.dumps({"detail": "Forbidden"}), status_code=403, media_type="application/json")
-
-# --- Dependency ---
-def get_db():
-    db = SessionLocal()
-    try: yield db
-    finally: db.close()
 
 # --- Auth Routes ---
 @app.get('/login/google')

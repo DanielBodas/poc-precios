@@ -7,11 +7,11 @@ const ApiService = {
         const res = await fetch(url, options);
         if (res.status === 401) {
             window.location.href = 'index.html';
-            return;
+            throw new Error("No autenticado");
         }
         if (res.status === 403) {
             alert("No tienes permisos para realizar esta acción.");
-            return;
+            throw new Error("Prohibido");
         }
         return res;
     },
