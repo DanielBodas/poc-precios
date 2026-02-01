@@ -1,5 +1,6 @@
 import os
 import jwt
+from unittest.mock import patch, MagicMock
 from backend.main import SECRET_KEY, ALGORITHM
 
 def test_health_check(client):
@@ -14,7 +15,8 @@ def test_config_js_default(client):
 
     response = client.get("/config.js")
     assert response.status_code == 200
-    assert "window.BACKEND_URL = '';" in response.text
+    # Falls back to testserver from request.base_url
+    assert "window.BACKEND_URL = 'http://testserver';" in response.text
     assert "no-cache" in response.headers["Cache-Control"]
 
 def test_config_js_with_env(client):
@@ -56,3 +58,37 @@ def test_read_users_me_success(client, db_session):
     data = response.json()
     assert data["email"] == "test@example.com"
     assert data["name"] == "Test User"
+
+def test_auth_google_callback_with_frontend_url(client, db_session):
+    os.environ["FRONTEND_URL"] = "https://frontend.com"
+
+    # Mocking the OAuth authorize_access_token
+    with patch("backend.main.oauth.google.authorize_access_token") as mock_token:
+        # Mocking an async function requires a Future or an AsyncMock
+        import asyncio
+        from unittest.mock import AsyncMock
+        mock_token.side_effect = AsyncMock(return_value={"userinfo": {"email": "callback@test.com", "name": "Callback User", "picture": "pic"}})
+
+        # Call the endpoint
+        response = client.get("/auth/google/callback", follow_redirects=False)
+
+        assert response.status_code == 302
+        location = response.headers["Location"]
+        assert location.startswith("https://frontend.com/home.html?token=")
+
+    del os.environ["FRONTEND_URL"]
+
+def test_auth_google_callback_no_frontend_url(client, db_session):
+    if "FRONTEND_URL" in os.environ: del os.environ["FRONTEND_URL"]
+
+    with patch("backend.main.oauth.google.authorize_access_token") as mock_token:
+        from unittest.mock import AsyncMock
+        mock_token.side_effect = AsyncMock(return_value={"userinfo": {"email": "callback2@test.com", "name": "Callback User 2", "picture": "pic"}})
+
+        # Call the endpoint
+        response = client.get("/auth/google/callback", follow_redirects=False)
+
+        assert response.status_code == 302
+        location = response.headers["Location"]
+        # Should be relative
+        assert location.startswith("/home.html?token=")

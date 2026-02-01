@@ -76,15 +76,39 @@ def get_db():
     try: yield db
     finally: db.close()
 
+# --- Health Check ---
+@app.get("/health")
+def health_check():
+    return {"status": "ok"}
+
+# --- Endpoints de Configuración ---
+@app.get("/config.js")
+def get_config(request: Request):
+    # Prioritize API_URL/BACKEND_URL, fallback to request's base URL
+    backend_url = os.getenv("API_URL") or os.getenv("BACKEND_URL")
+    if not backend_url:
+        backend_url = str(request.base_url).rstrip('/')
+
+    if backend_url.endswith('/'): backend_url = backend_url[:-1]
+
+    print(f"DEBUG: Serving config.js with BACKEND_URL='{backend_url}'")
+    content = f"window.BACKEND_URL = '{backend_url}';"
+    return Response(
+        content=content,
+        media_type="application/javascript",
+        headers={"Cache-Control": "no-cache, no-store, must-revalidate"}
+    )
+
 # --- Auth Routes ---
 @app.get('/login/google')
 async def login_google(request: Request):
     # Construct Redirect URI dynamically based on configured API_URL, BACKEND_URL or Host
-    base_url = os.getenv('API_URL') or os.getenv('BACKEND_URL') or 'http://127.0.0.1:8000'
+    base_url = os.getenv('API_URL') or os.getenv('BACKEND_URL') or str(request.base_url).rstrip('/')
     if base_url.endswith('/'): base_url = base_url[:-1]
     redirect_uri = f"{base_url}/auth/google/callback"
     
     print(f"DEBUG: Initiating Google Login with redirect_uri={redirect_uri}")
+    # Using 302 Found for OAuth redirects
     return await oauth.google.authorize_redirect(request, redirect_uri)
 
 @app.get('/auth/google/callback')
@@ -123,14 +147,19 @@ async def auth_google(request: Request, db: Session = Depends(get_db)):
         access_token = create_access_token(data={"sub": user.email, "role": user.role, "id": user.id})
         
         # Redirect to Frontend Home with Token
-        base_url = os.getenv('API_URL') or os.getenv('BACKEND_URL') or 'http://127.0.0.1:8000'
-        if base_url.endswith('/'): base_url = base_url[:-1]
-        # Assuming frontend is served statically or on a known port. 
-        # If frontend is separate (e.g. port 5500), we should redirect there.
-        # Ideally, use an allowed frontend origin from env.
-        frontend_url = "http://127.0.0.1:5500/frontend/home.html" # Default to typical local setup
-        # Or better: relative path if served by same origin
-        return RedirectResponse(url=f'/home.html?token={access_token}')
+        frontend_url = os.getenv('FRONTEND_URL')
+        if frontend_url:
+            if frontend_url.endswith('/'): frontend_url = frontend_url[:-1]
+            if not frontend_url.endswith('.html') and 'home.html' not in frontend_url:
+                target_url = f"{frontend_url}/home.html?token={access_token}"
+            else:
+                target_url = f"{frontend_url}?token={access_token}"
+        else:
+            target_url = f'/home.html?token={access_token}'
+
+        print(f"DEBUG: Redirecting to {target_url}")
+        # Use 302 Found for final redirect
+        return RedirectResponse(url=target_url, status_code=302)
         
     except Exception as e:
         print(f"Auth Error: {e}")
@@ -158,31 +187,6 @@ def read_users_me(request: Request, db: Session = Depends(get_db)):
         "picture": user.picture,
         "role": user.role
     }
-
-
-# --- Endpoints de Configuración ---
-@app.get("/config.js")
-def get_config():
-    backend_url = os.getenv("API_URL") or os.getenv("BACKEND_URL") or ""
-    if backend_url.endswith('/'): backend_url = backend_url[:-1]
-    print(f"DEBUG: Serving config.js with BACKEND_URL='{backend_url}'")
-    content = f"window.BACKEND_URL = '{backend_url}';"
-    return Response(
-        content=content,
-        media_type="application/javascript",
-        headers={"Cache-Control": "no-cache, no-store, must-revalidate"}
-    )
-
-@app.get("/health")
-def health_check():
-    return {"status": "ok"}
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 # --- Catálogo: Categorías ---
 @app.get("/catalog/categorias", response_model=List[schemas.Categoria])
