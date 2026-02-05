@@ -1,0 +1,18 @@
+{
+  "name": "pricetracker-pro-mobile",
+  "version": "1.0.0",
+  "description": "PriceTracker Pro Mobile App",
+  "main": "index.js",
+  "scripts": {
+    "sync": "npx cap sync",
+    "open:android": "npx cap open android",
+    "open:ios": "npx cap open ios",
+    "build": "echo 'Web assets are in www/ directory'"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.0.0",
+    "@capacitor/cli": "^6.0.0",
+    "@capacitor/core": "^6.0.0",
+    "@capacitor/ios": "^6.0.0"
+  }
+}

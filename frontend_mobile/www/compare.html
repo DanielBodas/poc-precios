@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comparativa — PriceTracker Pro</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="css/main.css">
+    <!-- Ensure CSS is loaded before JS runs -->
+    <style>
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .kpi-card {
+            background: white;
+            padding: 1.25rem;
+            border-radius: var(--radius);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            text-align: center;
+            box-shadow: var(--shadow);
+        }
+
+        .kpi-value {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--primary);
+            margin: 0.25rem 0;
+        }
+
+        .kpi-label {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            font-weight: 700;
+            color: var(--text-muted);
+            letter-spacing: 0.05em;
+        }
+
+        .chart-container {
+            background: white;
+            padding: 1.5rem;
+            border-radius: var(--radius);
+            margin-bottom: 1.5rem;
+            box-shadow: var(--shadow);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 300px;
+        }
+
+        .super-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .super-card {
+            background: white;
+            padding: 1.25rem;
+            border-radius: 12px;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            box-shadow: var(--shadow);
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            font-size: 0.85rem;
+        }
+
+        .stat-row:last-child {
+            border-bottom: none;
+        }
+
+        .trend-up {
+            color: #ef4444;
+            font-weight: 600;
+        }
+
+        .trend-down {
+            color: #22c55e;
+            font-weight: 600;
+        }
+
+        .win-badge {
+            background: #22c55e;
+            color: white;
+            font-size: 0.7rem;
+            padding: 0.1rem 0.5rem;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- components.js inserts Navbar & Sidebar -->
+    <!-- Explicitly ensuring this container exists for components.js -->
+    <div class="layout-container no-widgets">
+        <main>
+            <h1 class="page-title">Análisis Comparativo</h1>
+
+            <div class="card"
+                style="padding: 1.5rem; margin-bottom: 2rem; display: flex; gap: 1rem; align-items:center; flex-wrap:wrap;">
+                <div style="flex:1;">
+                    <label style="margin-bottom: 0.5rem; display:block;">Selecciona un producto para analizar:</label>
+                    <select id="select-doc-compare">
+                        <option value="">Cargando catálogo...</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="analysis-content" style="display: none;">
+                <!-- KPIs Globales -->
+                <div class="kpi-grid">
+                    <div class="kpi-card">
+                        <div class="kpi-label">Último Precio</div>
+                        <div id="kpi-last" class="kpi-value">--</div>
+                        <div id="kpi-last-store" style="font-size: 0.7rem; color: var(--text-muted);">--</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label">Mejor Precio</div>
+                        <div id="kpi-min" class="kpi-value" style="color: var(--success);">--</div>
+                        <div id="kpi-min-store" style="font-size: 0.7rem; color: var(--text-muted);">--</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label">Precio Medio</div>
+                        <div id="kpi-avg" class="kpi-value">--</div>
+                        <div id="kpi-vs-avg" style="font-size: 0.7rem;">--</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-label">Registros</div>
+                        <div id="kpi-count" class="kpi-value" style="color: var(--primary);">--</div>
+                        <div style="font-size: 0.7rem; color: var(--text-muted);">Total samples</div>
+                    </div>
+                </div>
+
+                <!-- Gráfico Comparativo por Supermercado -->
+                <div class="chart-container">
+                    <h3 style="margin-bottom: 1rem; font-size: 1.1rem; color: var(--text-main);">
+                        <i data-lucide="trending-up"
+                            style="width:18px; vertical-align:middle; color:var(--primary);"></i>
+                        Evolución de Precios
+                    </h3>
+                    <div class="chart-wrapper">
+                        <canvas id="priceChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Estadísticas por Supermercado -->
+                <h3 style="margin-bottom: 1rem; font-size: 1.1rem; color: var(--text-main);">
+                    <i data-lucide="store" style="width:18px; vertical-align:middle; color:var(--primary);"></i>
+                    Comparativa por Supermercado
+                </h3>
+                <div id="super-stats" class="super-stats"></div>
+            </div>
+
+            <div id="empty-state-search" class="empty-state">
+                <i data-lucide="bar-chart-big"
+                    style="width: 48px; height: 48px; margin-bottom: 1rem; opacity: 0.2;"></i>
+                <p>Selecciona un producto arriba para ver el informe detallado.</p>
+            </div>
+        </main>
+    </div>
+
+    <!-- Move Scripts to end of body -->
+    <script src="config.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/components.js"></script>
+    <script>
+        let priceChart = null;
+        let allProducts = [];
+
+        async function init() {
+            try {
+                const p = await ApiService.getCatalogProductos();
+                allProducts = p.sort((a, b) => a.nombre.localeCompare(b.nombre));
+
+                updateSelect(allProducts);
+
+                const s = document.getElementById("select-doc-compare");
+                s.onchange = (e) => load(e.target.value);
+            } catch (e) { console.error("Compare Init Error:", e); }
+        }
+
+        function updateSelect(filtered) {
+            const s = document.getElementById("select-doc-compare");
+            if (!s) return;
+            s.innerHTML = '<option value="">Elige un producto...</option>' + filtered.map(x => `<option value="${x.id}">${x.nombre}</option>`).join('');
+        }
+
+        async function load(id) {
+            if (!id) {
+                document.getElementById('analysis-content').style.display = 'none';
+                document.getElementById('empty-state-search').style.display = 'block';
+                return;
+            }
+            document.getElementById('analysis-content').style.display = 'block';
+            document.getElementById('empty-state-search').style.display = 'none';
+
+            const h = await ApiService.getPrecioHistorial(id);
+            if (!h || h.length === 0) {
+                alert("No hay datos históricos para este producto");
+                return;
+            }
+
+            renderKPIs(h);
+            renderChartBySupermarket(h);
+            renderSuperStats(h);
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function renderKPIs(h) {
+            // ... same logic ...
+            const prices = h.map(x => x.precio_unidad);
+            const last = h[0];
+            const min = Math.min(...prices);
+            const avg = prices.reduce((a, b) => a + b, 0) / prices.length;
+
+            const fmt = (v) => v.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 3 }) + '€';
+
+            document.getElementById('kpi-last').textContent = fmt(last.precio_unidad);
+            document.getElementById('kpi-last-store').textContent = `${last.supermercado}`;
+            document.getElementById('kpi-min').textContent = fmt(min);
+            document.getElementById('kpi-min-store').textContent = h.find(x => x.precio_unidad === min).supermercado;
+            document.getElementById('kpi-avg').textContent = fmt(avg);
+            document.getElementById('kpi-count').textContent = h.length;
+
+            const diff = ((last.precio_unidad - avg) / avg * 100);
+            const vs = document.getElementById('kpi-vs-avg');
+            vs.textContent = diff > 0 ? `+${diff.toFixed(1)}% vs media` : `${diff.toFixed(1)}% ahorro`;
+            vs.className = diff > 0 ? 'trend-up' : 'trend-down';
+        }
+
+        function renderChartBySupermarket(h) {
+            const ctx = document.getElementById('priceChart').getContext('2d');
+            const d = [...h].reverse();
+
+            const supermarkets = [...new Set(d.map(x => x.supermercado))];
+            const colors = ['#6366f1', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
+
+            const datasets = supermarkets.map((super_name, idx) => {
+                const data = d.map(x => x.supermercado === super_name ? x.precio_unidad : null);
+                return {
+                    label: super_name,
+                    data: data,
+                    borderColor: colors[idx % colors.length],
+                    backgroundColor: colors[idx % colors.length],
+                    tension: 0.3,
+                    spanGaps: true,
+                    pointRadius: 4,
+                };
+            });
+
+            if (priceChart) priceChart.destroy();
+            priceChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: d.map(x => new Date(x.fecha).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })),
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'top' },
+                        tooltip: { mode: 'index', intersect: false }
+                    },
+                    scales: {
+                        y: {
+                            ticks: { callback: function (value) { return value.toFixed(2) + '€'; } }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderSuperStats(h) {
+            const container = document.getElementById('super-stats');
+            const bySupermarket = {};
+            h.forEach(p => {
+                if (!bySupermarket[p.supermercado]) bySupermarket[p.supermercado] = [];
+                bySupermarket[p.supermercado].push(p);
+            });
+            const stats = Object.entries(bySupermarket).map(([name, prices]) => {
+                const values = prices.map(p => p.precio_unidad);
+                return {
+                    name,
+                    count: prices.length,
+                    min: Math.min(...values),
+                    max: Math.max(...values),
+                    avg: values.reduce((a, b) => a + b, 0) / values.length,
+                    last: prices[0].precio_unidad
+                };
+            });
+            const winner = stats.reduce((min, s) => s.avg < min.avg ? s : min, stats[0]);
+            const fmt = (v) => v.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 3 }) + '€';
+
+            container.innerHTML = stats.sort((a, b) => a.avg - b.avg).map(s => `
+                <div class="super-card">
+                    <h4 style="font-weight:700; margin-bottom:0.8rem; display:flex; align-items:center; gap:0.5rem; color:var(--text-main);">
+                        ${s.name}
+                        ${s.name === winner.name ? '<span class="win-badge">🏆 Mejor Opción</span>' : ''}
+                    </h4>
+                    <div class="stat-row">
+                        <span style="color:var(--text-muted);">Precio Medio</span>
+                        <span style="font-weight:700;">${fmt(s.avg)}</span>
+                    </div>
+                    <div class="stat-row">
+                        <span style="color:var(--text-muted);">Mínimo</span>
+                        <span style="color:var(--success); font-weight:700;">${fmt(s.min)}</span>
+                    </div>
+                    <div class="stat-row">
+                        <span style="color:var(--text-muted);">Máximo</span>
+                        <span style="color:var(--danger); font-weight:700;">${fmt(s.max)}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        document.addEventListener("DOMContentLoaded", init);
+    </script>
+</body>
+
+</html>

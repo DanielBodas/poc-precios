@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Autorizando...</title>
+    <script>
+        // Mock handler for the Google Callback URI locally if they hit port 5500
+        // https://127.0.0.1:5500/google_login/google/authorized
+        // This file should probably be placed at that path structure, but simple http servers
+        // might not support deep paths easily without creating folders.
+        // I'll create the folder structure just in case they navigate there manually.
+        window.onload = function () {
+            const apiUrl = window.API_URL || '/'; // Fallback to root if API_URL is not defined
+            setTimeout(() => {
+                window.location.href = `${apiUrl}/index.html`;
+            }, 1000);
+        };
+    </script>
+</head>
+
+<body style="font-family: sans-serif; text-align: center; padding-top: 50px;">
+    <h1>Autenticación Exitosa</h1>
+    <p>Redirigiendo a la aplicación...</p>
+</body>
+
+</html>

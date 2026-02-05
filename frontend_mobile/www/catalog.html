@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administración — PriceTracker Pro</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="css/main.css">
+    <style>
+        .row-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.85rem 1rem;
+            background: white;
+            border-radius: 12px;
+            margin-bottom: 0.5rem;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .row-item:hover {
+            transform: translateX(4px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .search-box-mini {
+            margin-bottom: 0.5rem;
+            padding: 0.7rem;
+            border-radius: 10px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            width: 100%;
+            font-size: 0.85rem;
+        }
+
+        .tag-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 0.75rem;
+            min-height: 40px;
+            padding: 0.5rem;
+            background: rgba(0, 0, 0, 0.01);
+            border-radius: 10px;
+            border: 1px dashed rgba(0, 0, 0, 0.1);
+        }
+
+        .tag-pill button {
+            background: transparent;
+            border: none;
+            color: #ef4444;
+            padding: 0;
+            width: auto;
+            cursor: pointer;
+            box-shadow: none;
+            height: auto;
+            font-size: 1.1rem;
+            line-height: 1;
+        }
+
+        .tag-pill button:hover {
+            transform: scale(1.3);
+        }
+
+        .relation-block {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .admin-section {
+            display: none;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .admin-section.active {
+            display: block;
+        }
+
+        .section-header {
+            margin-bottom: 2rem;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            padding-bottom: 1rem;
+        }
+
+        .section-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .section-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 16px;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            box-shadow: var(--shadow);
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .section-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
+            border-color: var(--primary);
+        }
+
+        .sc-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: rgba(99, 102, 241, 0.1);
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 0.5rem;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(5px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- components.js inserts Navbar & Sidebar -->
+
+    <div class="layout-container no-widgets">
+        <main>
+            <div class="section-header">
+                <h1 class="page-title" style="margin-bottom: 0.5rem;">Gestión de Catálogo</h1>
+                <p style="color:var(--text-muted);">Administra las entidades del sistema y sus relaciones.</p>
+            </div>
+
+            <!-- Dashboard View (Quick Access) -->
+            <div id="overview-dashboard" class="admin-section active">
+                <h3 style="margin-bottom: 1rem; font-size: 1.1rem; color: var(--text-main);">Entidades Principales</h3>
+                <div class="section-grid">
+                    <div class="section-card" onclick="showTab('reg-prods', document.getElementById('tab-prods'))">
+                        <div class="sc-icon"><i data-lucide="package"></i></div>
+                        <h4 style="font-weight: 700;">Productos</h4>
+                        <p style="font-size: 0.85rem; color: var(--text-muted);">Alta y baja de productos maestros.</p>
+                        <div class="badge badge-info" style="width:fit-content; margin-top:auto;" id="count-prods">--
+                            registros</div>
+                    </div>
+
+                    <div class="section-card" onclick="showTab('reg-marcas', document.getElementById('tab-marcas'))">
+                        <div class="sc-icon"><i data-lucide="award"></i></div>
+                        <h4 style="font-weight: 700;">Marcas</h4>
+                        <p style="font-size: 0.85rem; color: var(--text-muted);">Fabricantes y marcas.</p>
+                        <div class="badge badge-info" style="width:fit-content; margin-top:auto;" id="count-marcas">--
+                            registros</div>
+                    </div>
+
+                    <div class="section-card" onclick="showTab('reg-supers', document.getElementById('tab-supers'))">
+                        <div class="sc-icon"><i data-lucide="store"></i></div>
+                        <h4 style="font-weight: 700;">Supermercados</h4>
+                        <p style="font-size: 0.85rem; color: var(--text-muted);">Cadenas de establecimientos.</p>
+                        <div class="badge badge-info" style="width:fit-content; margin-top:auto;" id="count-supers">--
+                            registros</div>
+                    </div>
+
+                    <div class="section-card" onclick="showTab('reg-cats', document.getElementById('tab-cats'))">
+                        <div class="sc-icon"><i data-lucide="tag"></i></div>
+                        <h4 style="font-weight: 700;">Categorías</h4>
+                        <p style="font-size: 0.85rem; color: var(--text-muted);">Etiquetas de clasificación.</p>
+                        <div class="badge badge-info" style="width:fit-content; margin-top:auto;" id="count-cats">--
+                            registros</div>
+                    </div>
+                </div>
+
+                <h3 style="margin-bottom: 1rem; font-size: 1.1rem; color: var(--text-main);">Configuración Avanzada</h3>
+                <div class="section-grid">
+                    <div class="section-card" onclick="showTab('rel-main', document.getElementById('tab-rels'))">
+                        <div class="sc-icon"><i data-lucide="link-2"></i></div>
+                        <h4 style="font-weight: 700;">Mapeo de Relaciones</h4>
+                        <p style="font-size: 0.85rem; color: var(--text-muted);">Vincula marcas y unidades a productos
+                            específicos.</p>
+                    </div>
+                    <div class="section-card" onclick="showTab('reg-units', document.getElementById('tab-units'))">
+                        <div class="sc-icon"><i data-lucide="scale"></i></div>
+                        <h4 style="font-weight: 700;">Unidades de Medida</h4>
+                        <p style="font-size: 0.85rem; color: var(--text-muted);">Configuración de unidades (kg, g, L..).
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Internal Navigation (Hidden initially, shown when not in dashboard) -->
+            <div id="internal-nav" class="sub-nav-tabs" style="display:none;">
+                <button class="tab-btn" onclick="showOverview()">
+                    <i data-lucide="layout-grid" style="width: 16px;"></i> Vista General
+                </button>
+                <div style="width: 1px; background: rgba(0,0,0,0.1); margin: 0 0.5rem;"></div>
+                <button id="tab-prods" class="tab-btn" onclick="showTab('reg-prods', this)">Productos</button>
+                <button id="tab-marcas" class="tab-btn" onclick="showTab('reg-marcas', this)">Marcas</button>
+                <button id="tab-supers" class="tab-btn" onclick="showTab('reg-supers', this)">Supermercados</button>
+                <button id="tab-cats" class="tab-btn" onclick="showTab('reg-cats', this)">Categorías</button>
+                <button id="tab-units" class="tab-btn" onclick="showTab('reg-units', this)">Unidades</button>
+                <button id="tab-rels" class="tab-btn" onclick="showTab('rel-main', this)">Relaciones</button>
+            </div>
+
+            <!-- SECTIONS (Same logic, slightly cleaner headers) -->
+
+            <section id="reg-prods" class="admin-section">
+                <div class="card">
+                    <h2 style="font-size: 1.2rem; margin-bottom: 1rem;">Gestión de Productos</h2>
+                    <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+                        <input id="in-prod-name" type="text" placeholder="Nombre (ej: Manzanas Fuji)"
+                            onkeyup="checkFast(this.value)">
+                        <button onclick="addProdMaster()" style="width: auto; padding: 0 1.5rem;">Registrar</button>
+                    </div>
+                    <div id="fast-alert"
+                        style="color:var(--primary); font-size:0.8rem; margin-bottom:1rem; display:none; font-weight:700;">
+                        ⚠️ Nota: Ya existe un producto con este nombre o similar.
+                    </div>
+                    <input type="text" class="search-box-mini" placeholder="🔍 Buscar en catálogo..."
+                        onkeyup="filterList('catalog-list', this.value)">
+                    <div id="catalog-list" style="max-height: 400px; overflow-y: auto;"></div>
+                </div>
+            </section>
+
+            <section id="reg-marcas" class="admin-section">
+                <div class="card">
+                    <h2 style="font-size: 1.2rem; margin-bottom: 1rem;">Marcas Registradas</h2>
+                    <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem;">
+                        <input id="in-marca" type="text" placeholder="Ej: Nestlé">
+                        <button onclick="quickAdd('Marca','in-marca')"
+                            style="width: auto; padding: 0 1.5rem;">Añadir</button>
+                    </div>
+                    <div id="list-marcas" style="max-height: 500px; overflow-y: auto; column-count: 2;"></div>
+                </div>
+            </section>
+
+            <section id="reg-supers" class="admin-section">
+                <div class="card">
+                    <h2 style="font-size: 1.2rem; margin-bottom: 1rem;">Supermercados</h2>
+                    <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem;">
+                        <input id="in-super" type="text" placeholder="Ej: Mercadona">
+                        <button onclick="quickAdd('Supermercado','in-super')"
+                            style="width: auto; padding: 0 1.5rem;">Añadir</button>
+                    </div>
+                    <div id="list-supers" style="max-height: 500px; overflow-y: auto;"></div>
+                </div>
+            </section>
+
+            <section id="reg-cats" class="admin-section">
+                <div class="card">
+                    <h2 style="font-size: 1.2rem; margin-bottom: 1rem;">Categorías</h2>
+                    <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem;">
+                        <input id="in-cat" type="text" placeholder="Ej: Lácteos">
+                        <button onclick="quickAdd('Categoria','in-cat')"
+                            style="width: auto; padding: 0 1.5rem;">Añadir</button>
+                    </div>
+                    <div id="list-cats" style="max-height: 500px; overflow-y: auto;"></div>
+                </div>
+            </section>
+
+            <section id="reg-units" class="admin-section">
+                <div class="card">
+                    <h2 style="font-size: 1.2rem; margin-bottom: 1rem;">Unidades de Medida</h2>
+                    <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem;">
+                        <input id="in-unit" type="text" placeholder="Ej: kg, g, L, ud">
+                        <button onclick="quickAdd('Unidad','in-unit')"
+                            style="width: auto; padding: 0 1.5rem;">Añadir</button>
+                    </div>
+                    <div id="list-units" style="max-height: 500px; overflow-y: auto;"></div>
+                </div>
+            </section>
+
+            <section id="rel-main" class="admin-section">
+                <div class="card">
+                    <h2 style="font-size: 1.3rem; margin-bottom: 1.5rem;">Gestor de Relaciones</h2>
+                    <p style="color:var(--text-muted); margin-bottom:1.5rem;">Define qué marcas y unidades son válidas
+                        para cada producto.</p>
+
+                    <div style="margin-bottom: 2rem;">
+                        <label style="font-weight: 700; margin-bottom: 0.5rem; display: block;">Selecciona
+                            Producto</label>
+                        <input type="text" class="search-box-mini" placeholder="🔍 Filtrar lista..."
+                            onkeyup="filterSelect('sel-prod-rel', this.value)">
+                        <select id="sel-prod-rel" style="margin-top: 0.5rem;" onchange="loadProductState(this.value)">
+                            <option value="">Elige un producto...</option>
+                        </select>
+                    </div>
+
+                    <div id="mapping-controls" style="display: none;">
+                        <div class="relation-block">
+                            <h4><i data-lucide="tag" style="width:16px; vertical-align:middle;"></i> Categorías</h4>
+                            <div style="display: flex; gap: 0.5rem; margin-bottom: 0.75rem;">
+                                <select id="sel-add-cat" style="flex: 1;"></select>
+                                <button onclick="addRelation('Categoria')"
+                                    style="background:var(--success); width: auto; padding: 0 1.5rem;">+</button>
+                            </div>
+                            <div id="cur-cats" class="tag-list"></div>
+                        </div>
+
+                        <div class="relation-block">
+                            <h4><i data-lucide="scale" style="width:16px; vertical-align:middle;"></i> Unidades
+                                Permitidas</h4>
+                            <div style="display: flex; gap: 0.5rem; margin-bottom: 0.75rem;">
+                                <select id="sel-add-unit" style="flex: 1;"></select>
+                                <button onclick="addRelation('Unidad')"
+                                    style="background:var(--success); width: auto; padding: 0 1.5rem;">+</button>
+                            </div>
+                            <div id="cur-units" class="tag-list"></div>
+                        </div>
+
+                        <div class="relation-block">
+                            <h4><i data-lucide="award" style="width:16px; vertical-align:middle;"></i> Marcas
+                                Disponibles</h4>
+                            <div style="display: flex; gap: 0.5rem; margin-bottom: 0.75rem;">
+                                <select id="sel-add-marca" style="flex: 1;"></select>
+                                <button onclick="addRelation('Marca')"
+                                    style="background:var(--success); width: auto; padding: 0 1.5rem;">+</button>
+                            </div>
+                            <div id="cur-marcas" class="tag-list"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="config.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/components.js"></script>
+    <script>
+        let allProds = [];
+        let curProdId = null;
+
+        async function init() {
+            try {
+                const [cats, marcas, supers, units, prods] = await Promise.all([
+                    ApiService.getCatalogCategorias(),
+                    ApiService.getCatalogMarcas(),
+                    ApiService.getCatalogSupermercados(),
+                    ApiService.getCatalogUnidades(),
+                    ApiService.getCatalogProductos()
+                ]);
+
+                allProds = prods;
+
+                // Dashboard stats
+                document.getElementById('count-prods').textContent = `${prods.length} registros`;
+                document.getElementById('count-marcas').textContent = `${marcas.length} registros`;
+                document.getElementById('count-supers').textContent = `${supers.length} registros`;
+                document.getElementById('count-cats').textContent = `${cats.length} registros`;
+
+                // Lists
+                renderList("catalog-list", prods, 'deleteProducto');
+                renderList("list-marcas", marcas, 'deleteMarca');
+                renderList("list-supers", supers, 'deleteSupermercado');
+                renderList("list-cats", cats, 'deleteCategoria');
+                renderList("list-units", units, 'deleteUnidad');
+
+                const popSelect = (id, items) => {
+                    const el = document.getElementById(id);
+                    if (el) el.innerHTML = '<option value="">Selecciona...</option>' + items.sort((a, b) => a.nombre.localeCompare(b.nombre)).map(x => `<option value="${x.id}">${x.nombre}</option>`).join('');
+                };
+                popSelect('sel-prod-rel', prods);
+                popSelect('sel-add-cat', cats);
+                popSelect('sel-add-marca', marcas);
+                popSelect('sel-add-unit', units);
+
+                lucide.createIcons();
+            } catch (e) { console.error(e); }
+        }
+
+        function showOverview() {
+            document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
+            document.getElementById('overview-dashboard').classList.add('active');
+            document.getElementById('internal-nav').style.display = 'none';
+        }
+
+        function showTab(id, btn) {
+            document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+
+            document.getElementById(id).classList.add('active');
+            if (btn) btn.classList.add('active');
+
+            // Show nav if not visible
+            document.getElementById('internal-nav').style.display = 'flex';
+        }
+
+        function renderList(id, items, method) {
+            const container = document.getElementById(id);
+            if (!container) return;
+            container.innerHTML = items.sort((a, b) => a.nombre.localeCompare(b.nombre)).map(i => `
+                <div class="row-item" data-name="${i.nombre.toLowerCase()}">
+                    <span style="font-weight:600;">${i.nombre}</span>
+                    <button onclick="handleDel(${i.id},'${method}')" style="background:transparent; color:#ef4444; width:auto; padding:0; box-shadow:none;"><i data-lucide="x-circle" style="width:16px;"></i></button>
+                </div>
+            `).join('');
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function filterList(id, q) {
+            const lowerQ = q.toLowerCase();
+            document.querySelectorAll(`#${id} .row-item`).forEach(el => {
+                el.style.display = el.dataset.name.includes(lowerQ) ? 'flex' : 'none';
+            });
+        }
+
+        function filterSelect(sid, q) {
+            const lowerQ = q.toLowerCase();
+            const opts = document.getElementById(sid).options;
+            for (let i = 1; i < opts.length; i++) {
+                opts[i].style.display = opts[i].text.toLowerCase().includes(lowerQ) ? 'block' : 'none';
+            }
+        }
+
+        function checkFast(val) {
+            const alert = document.getElementById("fast-alert");
+            if (val.length < 3) return alert.style.display = 'none';
+            const exists = allProds.some(p => p.nombre.toLowerCase().includes(val.toLowerCase()));
+            alert.style.display = exists ? 'block' : 'none';
+        }
+
+        async function addProdMaster() {
+            const n = document.getElementById("in-prod-name").value.trim();
+            if (!n) return alert("Nombre obligatorio");
+            try {
+                await ApiService.createProducto(n, [], [], []);
+                document.getElementById("in-prod-name").value = "";
+                document.getElementById("fast-alert").style.display = 'none';
+                await init();
+            } catch (e) { console.error(e); alert("Error"); }
+        }
+
+        async function loadProductState(pid) {
+            curProdId = pid;
+            const controls = document.getElementById("mapping-controls");
+            if (!pid) { controls.style.display = 'none'; return; }
+            controls.style.display = 'block';
+
+            const p = allProds.find(x => x.id == pid);
+            renderTags('cur-cats', p.categorias, 'Categoria');
+            renderTags('cur-marcas', p.marcas, 'Marca');
+            renderTags('cur-units', p.unidades, 'Unidad');
+            lucide.createIcons();
+        }
+
+        function renderTags(id, items, type) {
+            const container = document.getElementById(id);
+            if (items.length === 0) {
+                container.innerHTML = '<span style="color:var(--text-muted); font-size:0.8rem; font-style:italic;">Sin elementos vinculados</span>';
+                return;
+            }
+            container.innerHTML = items.map(i => `
+                <div class="tag-pill">
+                    ${i.nombre}
+                    <button onclick="removeRelation('${type}', ${i.id})">×</button>
+                </div>
+            `).join('');
+        }
+
+        async function addRelation(type) {
+            if (!curProdId) return;
+            const selectId = type === 'Categoria' ? 'sel-add-cat' : type === 'Unidad' ? 'sel-add-unit' : 'sel-add-marca';
+            const val = document.getElementById(selectId).value;
+            if (!val) return;
+
+            try {
+                await ApiService[`link${type}`](curProdId, val);
+                const prods = await ApiService.getCatalogProductos();
+                allProds = prods;
+                loadProductState(curProdId);
+                document.getElementById(selectId).value = "";
+            } catch (e) { alert("Error: " + e); }
+        }
+
+        async function removeRelation(type, entityId) {
+            if (!curProdId) return;
+            if (!confirm("¿Desvincular?")) return;
+            try {
+                await ApiService[`unlink${type}`](curProdId, entityId);
+                const prods = await ApiService.getCatalogProductos();
+                allProds = prods;
+                loadProductState(curProdId);
+            } catch (e) { alert("Error: " + e); }
+        }
+
+        async function quickAdd(type, inputId) {
+            const val = document.getElementById(inputId).value;
+            if (!val) return;
+            await ApiService[`create${type}`](val);
+            document.getElementById(inputId).value = "";
+            init();
+        }
+
+        async function handleDel(id, method) {
+            if (!confirm("¿Eliminar definitivamente?")) return;
+            await ApiService[method](id);
+            init();
+        }
+
+        document.addEventListener("DOMContentLoaded", init);
+    </script>
+</body>
+
+</html>

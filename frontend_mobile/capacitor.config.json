@@ -1,0 +1,6 @@
+{
+  "appId": "com.pricetracker.pro",
+  "appName": "PriceTracker Pro",
+  "webDir": "www",
+  "bundledWebRuntime": false
+}
